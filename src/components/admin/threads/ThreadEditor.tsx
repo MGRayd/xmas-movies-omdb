@@ -183,7 +183,7 @@ export default function ThreadEditor({ mode }: { mode: "create" | "edit" }) {
       <h1 className="text-2xl mb-4 capitalize">{mode} Thread</h1>
 
       <div className="flex flex-col gap-4">
-        <Collapsible title="Basics" storageKey="thread-basics" defaultOpen>
+        <Collapsible title="Basics" storageKey="thread-basics">
           <ThreadBasicFields
             title={form.title}
             slug={form.slug}
@@ -193,7 +193,7 @@ export default function ThreadEditor({ mode }: { mode: "create" | "edit" }) {
           />
         </Collapsible>
 
-        <Collapsible title="Timeline Events" storageKey="thread-events" defaultOpen>
+        <Collapsible title="Timeline Events" storageKey="thread-events">
           <ThreadEventsEditor
             events={form.events}
             sessions={sessionsOpts}
@@ -201,9 +201,9 @@ export default function ThreadEditor({ mode }: { mode: "create" | "edit" }) {
           />
         </Collapsible>
 
-        <Collapsible title="Relations" storageKey="thread-relations" defaultOpen>
+        <Collapsible title="Relations" storageKey="thread-relations">
           <div className="grid gap-4">
-            <Collapsible title="Linked Sessions" storageKey="thread-rel-sessions" defaultOpen>
+            <Collapsible title="Linked Sessions" storageKey="thread-rel-sessions">
               <RelationPicker
                 title=""
                 options={sessionsOpts}
@@ -215,7 +215,7 @@ export default function ThreadEditor({ mode }: { mode: "create" | "edit" }) {
               />
             </Collapsible>
 
-            <Collapsible title="Linked NPCs" storageKey="thread-rel-npcs" defaultOpen>
+            <Collapsible title="Linked NPCs" storageKey="thread-rel-npcs">
               <RelationPicker
                 title=""
                 options={npcsOpts}
@@ -227,7 +227,7 @@ export default function ThreadEditor({ mode }: { mode: "create" | "edit" }) {
               />
             </Collapsible>
 
-            <Collapsible title="Linked Locations" storageKey="thread-rel-locations" defaultOpen>
+            <Collapsible title="Linked Locations" storageKey="thread-rel-locations">
               <RelationPicker
                 title=""
                 options={locationsOpts}
@@ -239,7 +239,7 @@ export default function ThreadEditor({ mode }: { mode: "create" | "edit" }) {
               />
             </Collapsible>
 
-            <Collapsible title="Linked Monsters" storageKey="thread-rel-monsters" defaultOpen>
+            <Collapsible title="Linked Monsters" storageKey="thread-rel-monsters">
               <RelationPicker
                 title=""
                 options={monstersOpts}

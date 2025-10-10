@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { v4 as uuid } from "uuid";
 import { ThreadTimelineEvent } from "@/types/Thread";
 import { Option } from "@/components/RelationPicker";
+import PlayerCharacterReference from "@/components/PlayerCharacterReference";
 
 export default function ThreadEventsEditor({
   events,
@@ -17,6 +18,8 @@ export default function ThreadEventsEditor({
     content: "",
     sessionId: "",
   });
+  
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   function addEvent() {
     if (!draft.content?.trim()) return;
@@ -48,6 +51,24 @@ export default function ThreadEventsEditor({
   function removeEvent(id: string) {
     const updatedEvents = events.filter(event => event.id !== id);
     onChange(updatedEvents);
+  }
+
+  function handleInsertCharacter(characterName: string) {
+    // For new event draft
+    if (contentTextareaRef.current) {
+      const textarea = contentTextareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = draft.content || "";
+      const newText = text.substring(0, start) + characterName + text.substring(end);
+      setDraft({ ...draft, content: newText });
+      
+      // Set focus back to textarea and place cursor after inserted text
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + characterName.length, start + characterName.length);
+      }, 0);
+    }
   }
 
   // Sort events by date (newest first)
@@ -104,11 +125,13 @@ export default function ThreadEventsEditor({
               <span className="label-text">Event Description</span>
             </label>
             <textarea
+              ref={contentTextareaRef}
               className="textarea textarea-bordered h-20"
               placeholder="Describe what happened in this thread event"
               value={draft.content || ""}
               onChange={(e) => setDraft({ ...draft, content: e.target.value })}
             />
+            <PlayerCharacterReference onInsert={handleInsertCharacter} />
           </div>
           <button 
             type="button" 
@@ -166,11 +189,21 @@ export default function ThreadEventsEditor({
                         Remove
                       </button>
                     </div>
-                    <textarea
-                      className="textarea textarea-bordered mt-2"
-                      value={event.content}
-                      onChange={(e) => updateEvent(event.id, { content: e.target.value })}
-                    />
+                    <div className="relative">
+                      <textarea
+                        className="textarea textarea-bordered mt-2 w-full"
+                        value={event.content}
+                        onChange={(e) => updateEvent(event.id, { content: e.target.value })}
+                      />
+                      <div className="mt-1">
+                        <PlayerCharacterReference 
+                          onInsert={(characterName) => {
+                            const updatedContent = event.content + characterName;
+                            updateEvent(event.id, { content: updatedContent });
+                          }} 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </li>
               ))}

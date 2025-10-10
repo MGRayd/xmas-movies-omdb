@@ -213,7 +213,7 @@ export default function LocationEditor({ mode }: { mode: "create" | "edit" }) {
       <h1 className="text-2xl mb-4 capitalize">{mode} {col}</h1>
 
       <div className="flex flex-col gap-4">
-        <Collapsible title="Basics" storageKey="sec-basics" defaultOpen>
+        <Collapsible title="Basics" storageKey="sec-basics">
           <BasicFields
             col={col}
             name={form.name || ""}
@@ -224,21 +224,21 @@ export default function LocationEditor({ mode }: { mode: "create" | "edit" }) {
           />
         </Collapsible>
 
-        <Collapsible title="Description" storageKey="sec-description" defaultOpen>
+        <Collapsible title="Description" storageKey="sec-description">
           <MarkdownEditor
             value={form.descriptionMarkdown || ""}
             onChange={(v) => setForm((s) => ({ ...s, descriptionMarkdown: v }))}
           />
         </Collapsible>
 
-        <Collapsible title="Appearance" storageKey="sec-appearance" defaultOpen>
+        <Collapsible title="Appearance" storageKey="sec-appearance">
           <MarkdownEditor
             value={form.appearanceMarkdown || ""}
             onChange={(v) => setForm((s) => ({ ...s, appearanceMarkdown: v }))}
           />
         </Collapsible>
 
-        <Collapsible title="Notable Features" storageKey="sec-features" defaultOpen>
+        <Collapsible title="Notable Features" storageKey="sec-features">
           <MarkdownEditor
             value={form.featuresMarkdown || ""}
             onChange={(v) => setForm((s) => ({ ...s, featuresMarkdown: v }))}
@@ -256,7 +256,7 @@ export default function LocationEditor({ mode }: { mode: "create" | "edit" }) {
           />
         </Collapsible>
 
-        <Collapsible title="Relations" storageKey="sec-relations" defaultOpen>
+        <Collapsible title="Relations" storageKey="sec-relations">
           <LocationRelations
             loading={loadingRefs}
             locations={locationsOpts}

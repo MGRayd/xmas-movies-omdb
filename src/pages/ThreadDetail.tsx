@@ -4,6 +4,7 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 import { db } from "@/firebase";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Thread, ThreadTimelineEvent } from "@/types/Thread";
+import EnhancedMarkdown from "@/components/EnhancedMarkdown";
 
 type LinkedItem = { id: string; slug?: string; label: string };
 
@@ -130,7 +131,7 @@ export default function ThreadDetail() {
 
       {/* Description */}
       <div className="my-4">
-        <p>{thread.description}</p>
+        <EnhancedMarkdown>{thread.description}</EnhancedMarkdown>
       </div>
 
       {/* Timeline Events */}
@@ -174,7 +175,9 @@ export default function ThreadDetail() {
                       
                       <div className="card-body pt-2">
                         {/* Event content */}
-                        <p>{event.content}</p>
+                        <div className="prose prose-invert max-w-none">
+                          <EnhancedMarkdown autoBoldCharacters={true}>{event.content}</EnhancedMarkdown>
+                        </div>
                         
                         {/* View in session link */}
                         {event.sessionId && session && (
