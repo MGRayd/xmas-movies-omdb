@@ -109,6 +109,15 @@ export default function AppLayout() {
                 Sessions
               </NavLink>
             </li>
+            <li>
+              <NavLink 
+                to="/threads" 
+                onClick={toggleMobileMenu}
+                className={({isActive}) => isActive ? 'active font-medium text-terraveil-line' : 'text-terraveil-text hover:text-terraveil-link'}
+              >
+                Threads
+              </NavLink>
+            </li>
             
             <li className="menu-title pt-4 text-terraveil-line">World</li>
             <li>
@@ -160,6 +169,7 @@ export default function AppLayout() {
             <li className="menu-title">Campaigns</li>
             <li><NavLink to="/calendar">Calendar</NavLink></li>
             <li><NavLink to="/sessions">Sessions</NavLink></li>
+            <li><NavLink to="/threads">Threads</NavLink></li>
             <li className="menu-title">World</li>
             <li><NavLink to="/locations">Locations</NavLink></li>
             <li className="menu-title">Characters & Creatures</li>

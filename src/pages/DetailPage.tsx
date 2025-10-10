@@ -11,6 +11,7 @@ import NpcDetailView from "@/components/admin/npc/NpcDetailView";
 import LocationDetailView from "@/components/admin/locations/LocationDetailView";
 import MonsterDetailView from "@/components/admin/monsters/MonsterDetailView";
 import CharacterDetailView from "@/components/admin/characters/CharacterDetailView";
+import ThreadDetailView from "@/components/admin/threads/ThreadDetailView";
 
 type LinkedItem = { id: string; slug?: string; label: string };
 
@@ -34,6 +35,7 @@ type BaseDoc = {
   linkedMonsters?: string[];
   linkedSessions?: string[];
   linkedCharacters?: string[];
+  linkedThreads?: string[];
 };
 
 export default function DetailPage({ collection }: { collection: string }) {
@@ -48,7 +50,8 @@ export default function DetailPage({ collection }: { collection: string }) {
     monsters: LinkedItem[];
     sessions: LinkedItem[];
     characters: LinkedItem[];
-  }>({ locations: [], npcs: [], monsters: [], sessions: [], characters: [] });
+    threads: LinkedItem[];
+  }>({ locations: [], npcs: [], monsters: [], sessions: [], characters: [], threads: [] });
   const [error, setError] = useState<string | null>(null);
 
   // fetch the document by slug
@@ -108,15 +111,16 @@ export default function DetailPage({ collection }: { collection: string }) {
           return out;
         }
 
-        const [locs, npcs, mons, sess, chars] = await Promise.all([
+        const [locs, npcs, mons, sess, chars, threads] = await Promise.all([
           resolve("locations", docData.linkedLocations),
           resolve("npcs", docData.linkedNpcs),
           resolve("monsters", docData.linkedMonsters),
           resolve("sessions", docData.linkedSessions),
           resolve("characters", docData.linkedCharacters),
+          resolve("threads", docData.linkedThreads),
         ]);
 
-        setLinks({ locations: locs, npcs, monsters: mons, sessions: sess, characters: chars });
+        setLinks({ locations: locs, npcs, monsters: mons, sessions: sess, characters: chars, threads });
       } catch (e: any) {
         console.error(e);
         setError(e?.message || "Failed to load.");
@@ -174,6 +178,8 @@ export default function DetailPage({ collection }: { collection: string }) {
         <MonsterDetailView data={data as any} />
       ) : collection === "characters" ? (
         <CharacterDetailView data={data as any} />
+      ) : collection === "threads" ? (
+        <ThreadDetailView data={data as any} />
       ) : (
         // default fallback for other collections (until their own views exist)
         <EnhancedMarkdown>
@@ -186,7 +192,8 @@ export default function DetailPage({ collection }: { collection: string }) {
         links.npcs.length ||
         links.monsters.length ||
         links.sessions.length ||
-        links.characters.length) && (
+        links.characters.length ||
+        links.threads.length) && (
         <div className="not-prose mt-10 border-t border-base-300 pt-6">
           <h2 className="text-2xl font-semibold mb-4">Links</h2>
 
@@ -204,6 +211,9 @@ export default function DetailPage({ collection }: { collection: string }) {
           )}
           {links.characters.length > 0 && (
             <BlockLinks title="Characters" base="/characters" items={links.characters} />
+          )}
+          {links.threads.length > 0 && (
+            <BlockLinks title="Threads" base="/threads" items={links.threads} />
           )}
         </div>
       )}

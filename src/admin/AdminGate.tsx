@@ -117,6 +117,18 @@ export default function AdminGate() {
               </div>
             </div>
 
+            {/* Threads card */}
+            <div className="card bg-base-200">
+              <div className="card-body">
+                <h3 className="card-title capitalize">Threads</h3>
+                <p className="text-sm mb-2">Story threads and plot lines across sessions.</p>
+                <div className="flex gap-2">
+                  <Link className="btn btn-primary btn-sm" to="/admin/threads/new">New</Link>
+                  <Link className="btn btn-sm" to="/threads">View</Link>
+                </div>
+              </div>
+            </div>
+
             {/* Session Notes card */}
             <div className="card bg-base-200">
               <div className="card-body">
@@ -138,6 +150,8 @@ export default function AdminGate() {
                 </div>
               </div>
             </div>
+
+            {/* No migrations card - removed as requested */}
           </div>
         </>
       )}

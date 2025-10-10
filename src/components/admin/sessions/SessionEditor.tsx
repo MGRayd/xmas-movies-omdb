@@ -19,11 +19,11 @@ import Collapsible from "@/components/admin/sessions/Collapsible";
 import BasicFields from "@/components/admin/sessions/BasicFields";
 import MarkdownEditor from "@/components/admin/sessions/MarkdownEditor";
 import PublishToggle from "@/components/admin/sessions/PublishToggle";
-import OpenThreadsEditor, { ThreadItem } from "@/components/admin/sessions/OpenThreadsEditor";
 import ImageUpload from "@/components/admin/sessions/ImageUpload";
 import SessionRelations from "@/components/admin/sessions/SessionRelations";
 import { Option } from "@/components/RelationPicker";
 import TldrEditor from "@/components/admin/sessions/TldrEditor";
+import ThreadRelationPicker from "@/components/admin/threads/ThreadRelationPicker";
 import { useToast } from "@/ui/ToastProvider";
 
 type AnyMap = Record<string, any>;
@@ -64,9 +64,7 @@ export default function AdminEditor({ mode }: { mode: "create" | "edit" }) {
     linkedNpcs: [] as string[],
     linkedMonsters: [] as string[],
     linkedSessions: [] as string[],
-
-    // sessions-only
-    openThreads: [] as ThreadItem[],
+    linkedThreads: [] as string[],
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -105,7 +103,7 @@ export default function AdminEditor({ mode }: { mode: "create" | "edit" }) {
             linkedNpcs: data.linkedNpcs ?? [],
             linkedMonsters: data.linkedMonsters ?? [],
             linkedSessions: data.linkedSessions ?? [],
-            openThreads: data.openThreads ?? [],
+            linkedThreads: data.linkedThreads ?? [],
           }));
         }
       } else {
@@ -354,10 +352,10 @@ export default function AdminEditor({ mode }: { mode: "create" | "edit" }) {
         </Collapsible>
 
         {isSession && (
-          <Collapsible title="Open Threads" storageKey="sec-threads" defaultOpen>
-            <OpenThreadsEditor
-              value={form.openThreads || []}
-              onChange={(next) => setForm((s) => ({ ...s, openThreads: next }))}
+          <Collapsible title="Threads" storageKey="sec-threads" defaultOpen>
+            <ThreadRelationPicker
+              value={form.linkedThreads || []}
+              onChange={(next) => setForm((s) => ({ ...s, linkedThreads: next }))}
             />
           </Collapsible>
         )}

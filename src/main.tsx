@@ -11,6 +11,8 @@ import DetailPage from './pages/DetailPage'
 import Calendar from './pages/Calendar'
 import SearchResults from './pages/SearchResults'
 import AdminGate from './admin/AdminGate'
+import ThreadList from './pages/ThreadList'
+import ThreadDetail from './pages/ThreadDetail'
 
 // Editors
 import SessionEditor from './components/admin/sessions/SessionEditor'
@@ -19,6 +21,7 @@ import NpcEditor from './components/admin/npc/NpcEditor'
 import LocationEditor from './components/admin/locations/LocationEditor'
 import MonsterEditor from './components/admin/monsters/MonsterEditor'
 import CharacterEditor from './components/admin/characters/CharacterEditor'
+import ThreadEditor from './components/admin/threads/ThreadEditor'
 import PlayerCharacterManager from './components/admin/playerCharacters/PlayerCharacterManager'
 import SettingsManager from './components/admin/settings/SettingsManager'
 
@@ -36,6 +39,8 @@ const router = createBrowserRouter([
     { path: '/locations/:slug', element: <DetailPage collection="locations" /> },
     { path: '/characters', element: <ListPage collection="characters" /> },
     { path: '/characters/:slug', element: <DetailPage collection="characters" /> },
+    { path: '/threads', element: <ThreadList /> },
+    { path: '/threads/:slug', element: <ThreadDetail /> },
     { path: '/search', element: <SearchResults /> },
 
     // Admin landing
@@ -62,6 +67,10 @@ const router = createBrowserRouter([
     // Characters
     { path: '/admin/characters/new', element: <CharacterEditor mode="create" /> },
     { path: '/admin/characters/:id/edit', element: <CharacterEditor mode="edit" /> },
+
+    // Threads
+    { path: '/admin/threads/new', element: <ThreadEditor mode="create" /> },
+    { path: '/admin/threads/:id/edit', element: <ThreadEditor mode="edit" /> },
 
     // Player Characters
     { path: '/admin/player-characters', element: <PlayerCharacterManager /> },
