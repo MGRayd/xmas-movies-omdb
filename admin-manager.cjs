@@ -4,7 +4,8 @@ const readline = require('readline');
 
 admin.initializeApp({
   credential: admin.credential.cert(require('./serviceAccount.json')),
-  projectId: 'terraveil-journal',
+  projectId: 'xmas-quiz-8c02e',
+  storageBucket: 'xmas-quiz-8c02e.firebasestorage.app'
 });
 
 const rl = readline.createInterface({

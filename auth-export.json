@@ -1,0 +1,58 @@
+{"users": [
+{
+  "localId": "1dQJdJBLrUYMscCrEt2kv9ycxDm1",
+  "email": "kevincharles0158@gmail.com",
+  "emailVerified": true,
+  "displayName": "White Wolf0158",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJNzsJhPK862uuAIg7S3B8ge1Bk44_XA5nvpyaEdN2koSD3dHQ=s96-c",
+  "lastSignedInAt": "1760628563388",
+  "createdAt": "1760556276993",
+  "customAttributes": "{\"admin\":true}",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "107570241021691410140",
+      "email": "kevincharles0158@gmail.com",
+      "displayName": "White Wolf0158",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJNzsJhPK862uuAIg7S3B8ge1Bk44_XA5nvpyaEdN2koSD3dHQ=s96-c"
+    }
+  ]
+},
+{
+  "localId": "HElWFHEb5HU4XFk7ldPyatMQz3o2",
+  "email": "theminibart@gmail.com",
+  "emailVerified": true,
+  "displayName": "Nova",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJeateWjF3G6RUvQPmwPJ73_sqyOW5G9hf7josxLo6a-6FKTEU=s96-c",
+  "lastSignedInAt": "1760115498920",
+  "createdAt": "1760095874034",
+  "customAttributes": "{\"admin\":true}",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "104578922767537925317",
+      "email": "theminibart@gmail.com",
+      "displayName": "Nova",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJeateWjF3G6RUvQPmwPJ73_sqyOW5G9hf7josxLo6a-6FKTEU=s96-c"
+    }
+  ]
+},
+{
+  "localId": "m8T8YPhuk1T00ekILXihmqXq3Nq2",
+  "email": "mgdeadi19@gmail.com",
+  "emailVerified": true,
+  "displayName": "Mark G",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKvpUHFkZAyZ_2K3fUHpGjGxttLjPfINp1s0-FDnRWsl9zHGvWQ=s96-c",
+  "lastSignedInAt": "1760631058945",
+  "createdAt": "1759162866706",
+  "customAttributes": "{\"admin\":true}",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "102258143409937475765",
+      "email": "mgdeadi19@gmail.com",
+      "displayName": "Mark G",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKvpUHFkZAyZ_2K3fUHpGjGxttLjPfINp1s0-FDnRWsl9zHGvWQ=s96-c"
+    }
+  ]
+}]}

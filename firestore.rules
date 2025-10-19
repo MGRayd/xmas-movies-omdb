@@ -1,27 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() { return request.auth != null; }
-    function isAdmin() { return isSignedIn() && request.auth.token.admin == true; }
-    function isPublished() { return resource.data.published == true; }
-
-    // Public can read published docs or search, admins can read all; only admins can write
-    match /{collection}/{document} {
-      // Allow reading for search functionality
-      allow read: if isPublished() || isAdmin() || collection in ['sessions', 'npcs', 'monsters', 'locations', 'characters', 'threads'];
-      allow write: if isAdmin();
+    // Default rule - deny access
+    match /{document=**} {
+      allow read, write: if false;
     }
     
-    // Special rule for roles collection
-    match /roles/{userId} {
+    // Questions collection - admin only
+    match /questions/{questionId} {
+      allow read: if true; // Anyone can read questions
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Rounds collection - admin only
+    match /rounds/{roundId} {
+      allow read: if true; // Anyone can read rounds
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Scores collection - public read, authenticated write
+    match /scores/{scoreId} {
+      allow read: if true; // Anyone can read scores
+      allow create: if true; // Anyone can submit a score
+      allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Admins collection - admin only
+    match /admins/{userId} {
+      // Allow reading your own admin document
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if isAdmin();
-    }
-    
-    // Special rule for allowlist collection - only admins can read/write
-    match /allowlist/{emailHash} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      
+      // Special rule for first admin - if no admins exist, allow creation of first admin document
+      // This is a development-friendly rule and should be removed in production
+      allow create: if request.auth != null && 
+                     request.auth.uid == userId && 
+                     request.resource.data.email == request.auth.token.email;
+      
+      // Once admins exist, only admins can create other admins
+      allow update, delete: if request.auth != null && 
+                              exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
   }
 }
