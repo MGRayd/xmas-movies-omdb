@@ -6,82 +6,70 @@ const HomePage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
-        <h1 className="font-christmas text-5xl md:text-7xl text-xmas-line mb-4 animate-pulse">
-          <i className="fas fa-snowflake text-xmas-snow mr-2"></i>
+        <h1 className="font-christmas text-5xl md:text-7xl text-xmas-line mb-4">
           Christmas Quiz
-          <i className="fas fa-snowflake text-xmas-snow ml-2"></i>
         </h1>
         <p className="text-xl md:text-2xl text-xmas-snow mb-8">Test your Christmas knowledge and compete for the top spot!</p>
         
         <div className="flex flex-col md:flex-row justify-center gap-6 mb-12">
           <Link 
             to="/quiz" 
-            className="btn btn-primary btn-lg font-christmas text-xl px-8 py-4 rounded-full shadow-lg transform transition-transform hover:scale-105"
+            className="btn btn-primary btn-lg text-xl px-8 py-3 rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border border-xmas-gold border-opacity-30"
           >
             <i className="fas fa-play-circle mr-2"></i> Start Quiz
           </Link>
         </div>
       </div>
 
-      {/* Christmas decorations */}
-      <div className="relative">
-        <div className="absolute -top-8 left-0 text-4xl text-xmas-gold opacity-70">
-          <i className="fas fa-star"></i>
-        </div>
-        <div className="absolute -top-12 right-1/4 text-3xl text-xmas-gold opacity-60">
-          <i className="fas fa-bell"></i>
-        </div>
-        <div className="absolute -top-6 right-1/3 text-2xl text-xmas-gold opacity-80">
-          <i className="fas fa-gift"></i>
-        </div>
+      {/* Subtle decoration */}
+      <div className="w-full max-w-4xl mx-auto mb-8">
+        <div className="h-px bg-gradient-to-r from-transparent via-xmas-gold to-transparent"></div>
       </div>
 
       {/* Scoreboard section */}
-      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border-2 border-xmas-gold">
-        <h2 className="font-christmas text-3xl md:text-4xl text-xmas-gold mb-6 text-center">
-          <i className="fas fa-trophy mr-2"></i> Leaderboard
-        </h2>
+      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border border-xmas-gold border-opacity-30">
+        <div className="mb-6 text-center">
+          <h2 className="font-christmas text-3xl md:text-4xl text-xmas-gold inline-block relative">
+            <span className="relative z-10">Leaderboard</span>
+            <span className="absolute -bottom-2 left-0 right-0 h-1 bg-xmas-gold opacity-30 rounded-full"></span>
+          </h2>
+        </div>
         <Scoreboard />
       </div>
 
       {/* How to play section */}
-      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12">
-        <h2 className="font-christmas text-3xl text-xmas-line mb-4">How to Play</h2>
+      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border border-xmas-gold border-opacity-20">
+        <h2 className="font-christmas text-3xl text-xmas-line mb-6">How to Play</h2>
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-opacity-20 bg-xmas-snow p-4 rounded-lg">
-            <div className="text-4xl text-xmas-gold mb-2 text-center">
+          <div className="bg-xmas-card bg-opacity-70 p-6 rounded-lg shadow-md border-l-2 border-xmas-line">
+            <div className="text-3xl text-xmas-gold mb-4 text-center">
               <i className="fas fa-question-circle"></i>
             </div>
-            <h3 className="font-christmas text-xl text-center mb-2">Answer Questions</h3>
-            <p className="text-center">Test your Christmas knowledge with our festive questions!</p>
+            <h3 className="font-christmas text-xl text-center mb-3">Answer Questions</h3>
+            <p className="text-center text-xmas-text text-opacity-80">Test your Christmas knowledge with our festive questions!</p>
           </div>
           
-          <div className="bg-opacity-20 bg-xmas-snow p-4 rounded-lg">
-            <div className="text-4xl text-xmas-gold mb-2 text-center">
+          <div className="bg-xmas-card bg-opacity-70 p-6 rounded-lg shadow-md border-l-2 border-xmas-gold">
+            <div className="text-3xl text-xmas-gold mb-4 text-center">
               <i className="fas fa-gift"></i>
             </div>
-            <h3 className="font-christmas text-xl text-center mb-2">Multiple Rounds</h3>
-            <p className="text-center">Enjoy different themed rounds of Christmas fun!</p>
+            <h3 className="font-christmas text-xl text-center mb-3">Multiple Rounds</h3>
+            <p className="text-center text-xmas-text text-opacity-80">Enjoy different themed rounds of Christmas fun!</p>
           </div>
           
-          <div className="bg-opacity-20 bg-xmas-snow p-4 rounded-lg">
-            <div className="text-4xl text-xmas-gold mb-2 text-center">
+          <div className="bg-xmas-card bg-opacity-70 p-6 rounded-lg shadow-md border-l-2 border-xmas-line">
+            <div className="text-3xl text-xmas-gold mb-4 text-center">
               <i className="fas fa-medal"></i>
             </div>
-            <h3 className="font-christmas text-xl text-center mb-2">Compete</h3>
-            <p className="text-center">Get on the leaderboard and show off your Christmas spirit!</p>
+            <h3 className="font-christmas text-xl text-center mb-3">Compete</h3>
+            <p className="text-center text-xmas-text text-opacity-80">Get on the leaderboard and show off your Christmas spirit!</p>
           </div>
         </div>
       </div>
 
-      {/* Christmas decorations at bottom */}
-      <div className="relative h-24 mb-8">
-        <div className="absolute bottom-0 left-0 w-24 h-24">
-          <i className="fas fa-holly-berry text-4xl text-xmas-line"></i>
-        </div>
-        <div className="absolute bottom-0 right-0 w-24 h-24">
-          <i className="fas fa-candy-cane text-4xl text-xmas-line"></i>
-        </div>
+      {/* Modern footer separator */}
+      <div className="w-full max-w-4xl mx-auto mb-8">
+        <div className="h-px bg-gradient-to-r from-transparent via-xmas-gold to-transparent"></div>
       </div>
 
       <footer className="text-center text-xmas-mute mt-12 pb-8">

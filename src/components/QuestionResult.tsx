@@ -33,8 +33,8 @@ const QuestionResult: React.FC<QuestionResultProps> = ({
     <div className="bg-xmas-card rounded-lg shadow-lg p-4 mb-4">
       <h3 className="text-xl font-christmas mb-2">{question.text}</h3>
       
-      {/* Display cover image as main image and normal image for picture rounds */}
-      {roundType === RoundType.PICTURE && (
+      {/* Display images based on round type */}
+      {roundType === RoundType.PICTURE ? (
         <div className="flex flex-col items-center mb-6">
           {/* Cover Image (if available) - shown larger */}
           {question.coverImageUrl && (
@@ -66,6 +66,20 @@ const QuestionResult: React.FC<QuestionResultProps> = ({
             </div>
           )}
         </div>
+      ) : (
+        /* Display standard image for all other round types */
+        question.imageUrl && (
+          <div className="flex flex-col items-center mb-6">
+            <HoverImage 
+              src={question.imageUrl} 
+              alt="Question Image"
+              thumbnailHeight="max-h-48"
+              maxWidth="500px"
+              maxHeight="500px"
+              className="object-contain rounded-lg"
+            />
+          </div>
+        )
       )}
       
       {/* User's answer and correct answer */}

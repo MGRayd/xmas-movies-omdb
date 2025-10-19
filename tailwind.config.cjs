@@ -13,9 +13,9 @@ module.exports = {
     fontFamily: {
       'sans': ['Poppins', 'sans-serif'],
       'serif': ['Poppins', 'sans-serif'],
-      'display': ['Mountains of Christmas', 'cursive'],
+      'display': ['Playfair Display', 'serif'],
       'body': ['Poppins', 'sans-serif'],
-      'christmas': ['Mountains of Christmas', 'cursive'],
+      'christmas': ['Playfair Display', 'serif'],
     },
     extend: {
       colors: {
@@ -28,14 +28,14 @@ module.exports = {
           link: '#d56060',
         },
         xmas: {
-          bg: '#121a2b',     // deep blue background
-          card: '#1a2540',   // slightly lighter blue for cards
-          line: '#d42426',   // bright red for accents
-          text: '#ffffff',   // white text
-          mute: '#a3b1d6',   // muted blue-white
-          link: '#ff8b3d',   // orange for links
-          gold: '#ffd700',   // gold for special elements
-          snow: '#f0f0f0',   // snow white
+          bg: '#1c2331',     // deep navy background
+          card: '#2c3e50',   // slate blue for cards
+          line: '#c0392b',   // deep red for accents
+          text: '#f5f5f5',   // off-white text
+          mute: '#a0aec0',   // muted slate blue
+          link: '#e67e22',   // burnt orange for links
+          gold: '#d4af37',   // antique gold for special elements
+          snow: '#f8f9fa',   // snow white
         },
       },
       typography: ({ theme }) => ({
@@ -56,17 +56,17 @@ module.exports = {
             '--tw-prose-hr': theme('colors.xmas.line'),
             fontFamily: 'Poppins, sans-serif',
             h1: {
-              fontFamily: 'Mountains of Christmas, cursive',
+              fontFamily: 'Playfair Display, serif',
               fontWeight: '900',
               letterSpacing: '-0.025em',
             },
             h2: {
-              fontFamily: 'Mountains of Christmas, cursive',
+              fontFamily: 'Playfair Display, serif',
               fontWeight: '700',
               letterSpacing: '-0.015em',
             },
             h3: {
-              fontFamily: 'Mountains of Christmas, cursive',
+              fontFamily: 'Playfair Display, serif',
               fontWeight: '700',
             },
             p: {
@@ -104,17 +104,17 @@ module.exports = {
       {
         xmas: {
           'color-scheme': 'dark',
-          primary:   '#d42426', // Christmas red
-          secondary: '#121a2b', // Deep blue
-          accent:    '#ffd700', // Gold
-          neutral:   '#1a2540', // Darker blue
-          'base-100': '#121a2b', // bg - deep blue
-          'base-200': '#1a2540', // card - slightly lighter blue
-          'base-300': '#2d3a5d', // borders - medium blue
-          info:    '#58a6ff',
-          success: '#34d399',
-          warning: '#ff8b3d', // Orange
-          error:   '#ef4444',
+          primary:   '#c0392b', // Modern Christmas red
+          secondary: '#1c2331', // Deep navy
+          accent:    '#d4af37', // Antique gold
+          neutral:   '#2c3e50', // Slate blue
+          'base-100': '#1c2331', // bg - deep navy
+          'base-200': '#2c3e50', // card - slate blue
+          'base-300': '#34495e', // borders - darker slate
+          info:    '#3498db',
+          success: '#2ecc71',
+          warning: '#e67e22', // Burnt orange
+          error:   '#e74c3c',
         },
       },
       'dark', // fallback
