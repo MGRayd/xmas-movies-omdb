@@ -14,11 +14,20 @@ const QuestionResult: React.FC<QuestionResultProps> = ({
   userAnswer,
   roundType
 }) => {
-  const isCorrect = question.isTextInput 
-    ? typeof userAnswer === 'string' && isTextAnswerCorrect(userAnswer, question.textAnswer, {
+  // Check if the answer is correct (exact match)
+  const isExactMatch = question.isTextInput 
+    ? typeof userAnswer === 'string' && userAnswer.toLowerCase().trim() === (question.textAnswer || '').toLowerCase().trim()
+    : typeof userAnswer === 'number' && userAnswer === question.correctAnswer;
+  
+  // Check if the answer is correct via alternative answers or partial matching
+  const isAlternativeMatch = question.isTextInput 
+    ? typeof userAnswer === 'string' && !isExactMatch && isTextAnswerCorrect(userAnswer, question.textAnswer, {
         acceptableAlternatives: question.alternativeAnswers || []
       })
-    : typeof userAnswer === 'number' && userAnswer === question.correctAnswer;
+    : false;
+    
+  // The answer is considered correct if it's either an exact match or an alternative match
+  const isCorrect = isExactMatch || isAlternativeMatch;
 
   return (
     <div className="bg-xmas-card rounded-lg shadow-lg p-4 mb-4">
@@ -71,11 +80,16 @@ const QuestionResult: React.FC<QuestionResultProps> = ({
                   ? question.options[userAnswer] 
                   : 'No answer provided')}
             </p>
+            {isAlternativeMatch && (
+              <p className="text-xs text-amber-500 italic mt-1">
+                Alternative answer accepted
+              </p>
+            )}
           </div>
           
-          {!isCorrect && (
+          {(!isCorrect || isAlternativeMatch) && (
             <div className="mt-2 sm:mt-0">
-              <p className="text-sm">Correct answer:</p>
+              <p className="text-sm">{isAlternativeMatch ? 'Primary answer:' : 'Correct answer:'}</p>
               <p className="font-bold text-green-500">
                 {question.isTextInput 
                   ? question.textAnswer 
@@ -88,9 +102,15 @@ const QuestionResult: React.FC<QuestionResultProps> = ({
       
       {/* Status indicator */}
       <div className="mt-3 flex justify-end">
-        <span className={`px-3 py-1 rounded-full text-sm ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {isCorrect ? 'Correct' : 'Incorrect'}
-        </span>
+        {isCorrect ? (
+          <span className={`px-3 py-1 rounded-full text-sm ${isAlternativeMatch ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+            {isAlternativeMatch ? 'Correct (Alternative)' : 'Correct'}
+          </span>
+        ) : (
+          <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">
+            Incorrect
+          </span>
+        )}
       </div>
     </div>
   );

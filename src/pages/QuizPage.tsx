@@ -123,8 +123,10 @@ const QuizPage: React.FC = () => {
         const answer = textAnswers[question.id] || '';
         newUserAnswers[question.id] = answer;
         
-        // Check if text answer is correct
-        if (isTextAnswerCorrect(answer, question.textAnswer)) {
+        // Check if text answer is correct (including alternative answers)
+        if (isTextAnswerCorrect(answer, question.textAnswer, {
+          acceptableAlternatives: question.alternativeAnswers || []
+        })) {
           roundScore++;
         }
       } else {
