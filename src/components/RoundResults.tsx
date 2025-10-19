@@ -8,6 +8,7 @@ interface RoundResultsProps {
   userAnswers: { [questionId: string]: string | number | null };
   roundScore: number;
   onContinue: () => void;
+  isLastRound?: boolean;
 }
 
 const RoundResults: React.FC<RoundResultsProps> = ({
@@ -15,7 +16,8 @@ const RoundResults: React.FC<RoundResultsProps> = ({
   questions,
   userAnswers,
   roundScore,
-  onContinue
+  onContinue,
+  isLastRound = false
 }) => {
   return (
     <div className="container mx-auto px-4 py-6">
@@ -46,7 +48,7 @@ const RoundResults: React.FC<RoundResultsProps> = ({
             className="btn btn-primary"
             onClick={onContinue}
           >
-            Continue to Next Round
+            {isLastRound ? 'Finish Quiz' : 'Continue to Next Round'}
           </button>
         </div>
       </div>

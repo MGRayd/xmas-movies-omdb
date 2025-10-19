@@ -7,6 +7,7 @@ import RoundResults from '../components/RoundResults';
 import { Question, Round, RoundType } from '../types/quiz';
 import HoverImage from '../components/HoverImage';
 import { isTextAnswerCorrect } from '../utils/stringMatching';
+import { scrollToTop } from '../utils/scrollUtils';
 
 // Using Question interface from types/quiz.ts
 
@@ -156,6 +157,9 @@ const QuizPage: React.FC = () => {
       ...newUserAnswers
     }));
     
+    // Scroll to top of the page
+    scrollToTop();
+    
     // Show round results
     setRoundCompleted(true);
     setShowRoundResults(true);
@@ -164,6 +168,9 @@ const QuizPage: React.FC = () => {
   const handleNextRound = () => {
     // Reset round results view
     setShowRoundResults(false);
+    
+    // Scroll to top of the page
+    scrollToTop();
     
     // Check if there are more rounds
     if (currentRoundIndex < rounds.length - 1) {
@@ -199,6 +206,9 @@ const QuizPage: React.FC = () => {
         roundScores,
         timestamp: serverTimestamp()
       });
+      
+      // Scroll to top before redirecting
+      scrollToTop();
       
       // Redirect to home page after submission
       navigate('/');
@@ -318,6 +328,9 @@ const QuizPage: React.FC = () => {
 
   // Show round results if we've completed all questions in the round
   if (showRoundResults) {
+    // Check if this is the last round
+    const isLastRound = currentRoundIndex === rounds.length - 1;
+    
     return (
       <RoundResults
         round={currentRound}
@@ -325,6 +338,7 @@ const QuizPage: React.FC = () => {
         userAnswers={userAnswers}
         roundScore={roundScores[currentRound.id] || 0}
         onContinue={handleNextRound}
+        isLastRound={isLastRound}
       />
     );
   }
