@@ -73,7 +73,7 @@ const Scoreboard: React.FC = () => {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto snow-accumulation snow-pile relative">
       <table className="table w-full">
         <thead>
           <tr className="text-xmas-gold">

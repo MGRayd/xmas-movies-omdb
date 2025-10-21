@@ -27,7 +27,7 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Scoreboard section */}
-      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border border-xmas-gold border-opacity-30">
+      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border border-xmas-gold border-opacity-30 snow-accumulation snow-accumulation-fast relative">
         <div className="mb-6 text-center">
           <h2 className="font-christmas text-3xl md:text-4xl text-xmas-gold inline-block relative">
             <span className="relative z-10">Leaderboard</span>
@@ -38,7 +38,7 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* How to play section */}
-      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border border-xmas-gold border-opacity-20">
+      <div className="bg-xmas-card rounded-lg shadow-xl p-6 mb-12 border border-xmas-gold border-opacity-20 snow-accumulation snow-accumulation-slow relative">
         <h2 className="font-christmas text-3xl text-xmas-line mb-6">How to Play</h2>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-xmas-card bg-opacity-70 p-6 rounded-lg shadow-md border-l-2 border-xmas-line">

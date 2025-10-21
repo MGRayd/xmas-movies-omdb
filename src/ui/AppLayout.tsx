@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useIsAdmin } from '../hooks/useIsAdmin'
+import SnowEffect from '../components/SnowEffect'
 
 export default function AppLayout() {
   const { isAdmin } = useIsAdmin();
@@ -37,11 +38,16 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-xmas-bg to-xmas-card bg-opacity-95">
-      <div className="navbar bg-xmas-card bg-opacity-90 border-b border-xmas-gold px-2 sm:px-4 shadow-lg">
+      <SnowEffect snowflakeCount={150} />
+      <div className="navbar bg-gradient-to-r from-xmas-card via-xmas-card to-xmas-bg border-b border-xmas-gold px-2 sm:px-4 shadow-lg relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-xmas-gold via-transparent to-xmas-gold opacity-60"></div>
+        <div className="absolute -bottom-4 left-0 right-0 h-8 snow-accumulation-fast"></div>
+        
         <div className="flex items-center">
           {/* Mobile menu button */}
           <button 
-            className="btn btn-ghost btn-sm md:hidden" 
+            className="btn btn-ghost btn-sm md:hidden relative z-10" 
             onClick={toggleMobileMenu}
             aria-label="Toggle navigation menu"
           >
@@ -49,10 +55,26 @@ export default function AppLayout() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
           </button>
-          {/* Hide title on mobile, show on sm and up */}
-          <Link to="/" className="btn btn-ghost normal-case text-lg sm:text-xl hidden sm:inline-flex font-christmas">
-            <i className="fas fa-holly-berry text-xmas-line mr-2"></i>
-            Xmas Quiz
+          
+          {/* Logo for all screen sizes with enhanced styling */}
+          <Link to="/" className="hidden sm:flex items-center group">
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-xmas-gold to-xmas-line rounded-full opacity-70 group-hover:opacity-100 blur transition duration-200"></div>
+              <div className="relative flex items-center justify-center w-10 h-10 bg-xmas-card rounded-full border border-xmas-gold">
+                <i className="fas fa-holly-berry text-xmas-line group-hover:text-xmas-gold transition-colors duration-300"></i>
+              </div>
+            </div>
+            <div className="ml-3 font-christmas text-xl sm:text-2xl bg-gradient-to-br from-xmas-gold via-xmas-snow to-xmas-gold bg-clip-text text-transparent font-bold">
+              Xmas Quiz
+            </div>
+          </Link>
+          
+          {/* Mobile logo */}
+          <Link to="/" className="sm:hidden flex items-center">
+            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-xmas-card border border-xmas-gold">
+              <i className="fas fa-holly-berry text-xmas-line"></i>
+            </div>
+            <span className="ml-2 font-christmas text-lg text-xmas-gold">Xmas Quiz</span>
           </Link>
         </div>
         
@@ -61,8 +83,12 @@ export default function AppLayout() {
         
         <div className="flex items-center gap-1 sm:gap-2">
           {isAdmin && (
-            <Link to="/admin" className="btn btn-primary btn-sm whitespace-nowrap px-2 sm:px-3">
-              <i className="fas fa-lock mr-1"></i> Admin
+            <Link to="/admin" className="relative group overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-xmas-line to-xmas-gold opacity-70 blur-sm group-hover:opacity-100 transition duration-300"></div>
+              <div className="relative btn btn-sm bg-xmas-card border border-xmas-gold px-3 py-1 flex items-center">
+                <i className="fas fa-lock mr-2 text-xmas-gold"></i>
+                <span className="font-christmas">Admin</span>
+              </div>
             </Link>
           )}
         </div>
@@ -74,69 +100,141 @@ export default function AppLayout() {
       </div>
       
       {/* Mobile navigation drawer */}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-xmas-bg border-r border-xmas-gold z-30 transform transition-transform duration-300 ease-in-out md:hidden shadow-xl ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex justify-between items-center p-4 border-b border-xmas-gold bg-xmas-card">
-          <span className="font-christmas text-xl text-xmas-line">
-            <i className="fas fa-holly-berry mr-2"></i>
-            Xmas Quiz
-          </span>
-          <button 
-            className="btn btn-ghost btn-sm text-xmas-text hover:text-xmas-line" 
-            onClick={toggleMobileMenu}
-            aria-label="Close navigation menu"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div className={`fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-xmas-bg to-xmas-card border-r border-xmas-gold z-30 transform transition-transform duration-300 ease-in-out md:hidden shadow-xl ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="relative overflow-hidden">
+          {/* Decorative snow at top of mobile menu */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-xmas-gold via-transparent to-xmas-gold opacity-60"></div>
+          
+          <div className="flex justify-between items-center p-4 border-b border-xmas-gold bg-xmas-card bg-opacity-80">
+            <div className="flex items-center">
+              <div className="w-9 h-9 flex items-center justify-center rounded-full bg-xmas-card border border-xmas-gold shadow-lg">
+                <i className="fas fa-holly-berry text-xmas-line"></i>
+              </div>
+              <div className="ml-3 font-christmas text-xl bg-gradient-to-br from-xmas-gold via-xmas-snow to-xmas-gold bg-clip-text text-transparent font-bold">
+                Xmas Quiz
+              </div>
+            </div>
+            <button 
+              className="btn btn-ghost btn-sm text-xmas-text hover:text-xmas-line" 
+              onClick={toggleMobileMenu}
+              aria-label="Close navigation menu"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         
         <div className="overflow-y-auto h-full pb-20">
-          <nav className="menu p-4">
-            <li className="menu-title pt-2 text-xmas-gold font-christmas">Navigation</li>
-            <li>
-              <NavLink 
-                to="/" 
-                onClick={toggleMobileMenu}
-                className={({isActive}) => isActive ? 'active font-medium text-xmas-gold' : 'text-xmas-text hover:text-xmas-link'}
-              >
-                <i className="fas fa-home mr-2"></i> Home
-              </NavLink>
-            </li>
-            <li>
-              <NavLink 
-                to="/quiz" 
-                onClick={toggleMobileMenu}
-                className={({isActive}) => isActive ? 'active font-medium text-xmas-gold' : 'text-xmas-text hover:text-xmas-link'}
-              >
-                <i className="fas fa-question-circle mr-2"></i> Take Quiz
-              </NavLink>
-            </li>
+          <div className="p-4 pt-6">
+            <div className="mb-6">
+              <h3 className="font-christmas text-xl text-xmas-gold mb-4 pl-2 border-l-2 border-xmas-line">
+                Navigation
+              </h3>
+              <ul className="space-y-3">
+                <li>
+                  <NavLink 
+                    to="/" 
+                    onClick={toggleMobileMenu}
+                    className={({isActive}) => 
+                      isActive 
+                        ? 'flex items-center p-2 pl-3 rounded-md bg-gradient-to-r from-xmas-card to-transparent border-l-2 border-xmas-gold text-xmas-gold font-medium' 
+                        : 'flex items-center p-2 pl-3 rounded-md hover:bg-xmas-card hover:bg-opacity-50 text-xmas-text hover:text-xmas-gold transition-all duration-200'
+                    }
+                  >
+                    {({isActive}) => (
+                      <>
+                        <i className="fas fa-home mr-3 text-xmas-gold"></i> 
+                        <span>Home</span>
+                        {/* Snowflake indicator */}
+                        <i className={`fas fa-snowflake ml-auto text-xmas-gold opacity-70 ${isActive ? 'visible' : 'invisible'}`}></i>
+                      </>
+                    )}
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink 
+                    to="/quiz" 
+                    onClick={toggleMobileMenu}
+                    className={({isActive}) => 
+                      isActive 
+                        ? 'flex items-center p-2 pl-3 rounded-md bg-gradient-to-r from-xmas-card to-transparent border-l-2 border-xmas-gold text-xmas-gold font-medium' 
+                        : 'flex items-center p-2 pl-3 rounded-md hover:bg-xmas-card hover:bg-opacity-50 text-xmas-text hover:text-xmas-gold transition-all duration-200'
+                    }
+                  >
+                    {({isActive}) => (
+                      <>
+                        <i className="fas fa-question-circle mr-3 text-xmas-gold"></i> 
+                        <span>Take Quiz</span>
+                        {/* Snowflake indicator */}
+                        <i className={`fas fa-snowflake ml-auto text-xmas-gold opacity-70 ${isActive ? 'visible' : 'invisible'}`}></i>
+                      </>
+                    )}
+                  </NavLink>
+                </li>
+              </ul>
+            </div>
             
             {isAdmin && (
-              <>
-                <li className="menu-title pt-4 text-xmas-gold font-christmas">Admin</li>
-                <li>
-                  <NavLink 
-                    to="/admin" 
-                    onClick={toggleMobileMenu}
-                    className={({isActive}) => isActive ? 'active font-medium text-xmas-gold' : 'text-xmas-text hover:text-xmas-link'}
-                  >
-                    <i className="fas fa-cog mr-2"></i> Dashboard
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink 
-                    to="/admin/results" 
-                    onClick={toggleMobileMenu}
-                    className={({isActive}) => isActive ? 'active font-medium text-xmas-gold' : 'text-xmas-text hover:text-xmas-link'}
-                  >
-                    <i className="fas fa-trophy mr-2"></i> Results
-                  </NavLink>
-                </li>
-              </>
+              <div>
+                <h3 className="font-christmas text-xl text-xmas-gold mb-4 pl-2 border-l-2 border-xmas-line">
+                  Admin
+                </h3>
+                <ul className="space-y-3">
+                  <li>
+                    <NavLink 
+                      to="/admin" 
+                      onClick={toggleMobileMenu}
+                      className={({isActive}) => 
+                        isActive 
+                          ? 'flex items-center p-2 pl-3 rounded-md bg-gradient-to-r from-xmas-card to-transparent border-l-2 border-xmas-gold text-xmas-gold font-medium' 
+                          : 'flex items-center p-2 pl-3 rounded-md hover:bg-xmas-card hover:bg-opacity-50 text-xmas-text hover:text-xmas-gold transition-all duration-200'
+                      }
+                    >
+                      {({isActive}) => (
+                        <>
+                          <i className="fas fa-cog mr-3 text-xmas-gold"></i> 
+                          <span>Dashboard</span>
+                          {/* Snowflake indicator */}
+                          <i className={`fas fa-snowflake ml-auto text-xmas-gold opacity-70 ${isActive ? 'visible' : 'invisible'}`}></i>
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink 
+                      to="/admin/results" 
+                      onClick={toggleMobileMenu}
+                      className={({isActive}) => 
+                        isActive 
+                          ? 'flex items-center p-2 pl-3 rounded-md bg-gradient-to-r from-xmas-card to-transparent border-l-2 border-xmas-gold text-xmas-gold font-medium' 
+                          : 'flex items-center p-2 pl-3 rounded-md hover:bg-xmas-card hover:bg-opacity-50 text-xmas-text hover:text-xmas-gold transition-all duration-200'
+                      }
+                    >
+                      {({isActive}) => (
+                        <>
+                          <i className="fas fa-trophy mr-3 text-xmas-gold"></i> 
+                          <span>Results</span>
+                          {/* Snowflake indicator */}
+                          <i className={`fas fa-snowflake ml-auto text-xmas-gold opacity-70 ${isActive ? 'visible' : 'invisible'}`}></i>
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                </ul>
+              </div>
             )}
-          </nav>
+            
+            {/* Decorative element at bottom of menu */}
+            <div className="mt-8 pt-4 border-t border-xmas-gold border-opacity-30 flex justify-center">
+              <div className="flex space-x-3">
+                <i className="fas fa-snowflake text-xmas-gold opacity-60"></i>
+                <i className="fas fa-tree text-xmas-gold opacity-60"></i>
+                <i className="fas fa-gift text-xmas-gold opacity-60"></i>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
