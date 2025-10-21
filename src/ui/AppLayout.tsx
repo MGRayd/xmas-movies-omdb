@@ -74,7 +74,7 @@ export default function AppLayout() {
             <div className="w-8 h-8 flex items-center justify-center rounded-full bg-xmas-card border border-xmas-gold overflow-hidden">
               <img src="/Santa.png" alt="Santa" className="w-full h-full object-cover" />
             </div>
-            <span className="ml-2 font-christmas text-lg text-xmas-gold">Xmas Quiz</span>
+            <span className="ml-2 font-christmas text-lg text-xmas-gold">PACT - Christmas Quiz</span>
           </Link>
         </div>
         
