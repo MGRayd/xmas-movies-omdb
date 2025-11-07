@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Movie, UserMovie } from '../types/movie';
+import { getUserMovie, saveUserMovie, deleteUserMovie } from '../utils/userMovieUtils';
 
 const MovieDetailPage: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
@@ -41,17 +42,42 @@ const MovieDetailPage: React.FC = () => {
         const movieData = { id: movieDoc.id, ...movieDoc.data() } as Movie;
         setMovie(movieData);
         
-        // Fetch user's movie data
-        const userMovieQuery = doc(db, 'userMovies', `${currentUser.uid}_${movieId}`);
-        const userMovieDoc = await getDoc(userMovieQuery);
+        // Fetch user's movie data using the new utility function
+        const userMovieData = await getUserMovie(currentUser.uid, movieId);
         
-        if (userMovieDoc.exists()) {
-          const userMovieData = { id: userMovieDoc.id, ...userMovieDoc.data() } as UserMovie;
+        if (userMovieData) {
           setUserMovie(userMovieData);
           
           // Set form state
           setWatched(userMovieData.watched);
-          setWatchedDate(userMovieData.watchedDate ? userMovieData.watchedDate.toISOString().split('T')[0] : '');
+          // Handle watchedDate with robust error handling
+          let dateStr = '';
+          if (userMovieData.watchedDate) {
+            try {
+              // If it's already a Date object
+              if (userMovieData.watchedDate instanceof Date) {
+                dateStr = userMovieData.watchedDate.toISOString().split('T')[0];
+              } else {
+                // If it's a Firestore timestamp, it has seconds and nanoseconds
+                const watchedDateValue = userMovieData.watchedDate as unknown;
+                if (typeof watchedDateValue === 'object' && watchedDateValue !== null && 'seconds' in watchedDateValue) {
+                  // It's a Firestore Timestamp
+                  const firestoreTimestamp = watchedDateValue as { seconds: number; nanoseconds: number };
+                  const timestamp = new Date(firestoreTimestamp.seconds * 1000);
+                  dateStr = timestamp.toISOString().split('T')[0];
+                } else {
+                  // Try to parse as a regular date string
+                  const parsedDate = new Date(userMovieData.watchedDate as any);
+                  if (!isNaN(parsedDate.getTime())) {
+                    dateStr = parsedDate.toISOString().split('T')[0];
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing watchedDate:', error);
+            }
+          }
+          setWatchedDate(dateStr);
           setRating(userMovieData.rating || null);
           setReview(userMovieData.review || '');
           setFavorite(userMovieData.favorite);
@@ -73,7 +99,6 @@ const MovieDetailPage: React.FC = () => {
     try {
       setSaving(true);
       
-      const userMovieRef = doc(db, 'userMovies', `${currentUser.uid}_${movieId}`);
       const userData: Partial<UserMovie> = {
         userId: currentUser.uid,
         movieId,
@@ -84,31 +109,32 @@ const MovieDetailPage: React.FC = () => {
       
       // Add optional fields
       if (watched && watchedDate) {
-        userData.watchedDate = new Date(watchedDate);
+        try {
+          userData.watchedDate = new Date(watchedDate);
+          // Validate that the date is valid
+          if (isNaN(userData.watchedDate.getTime())) {
+            // If invalid, don't include it
+            delete userData.watchedDate;
+          }
+        } catch (error) {
+          console.error('Error parsing watchedDate for save:', error);
+          // If there's an error, don't include the date
+          delete userData.watchedDate;
+        }
+      } else if (!watched) {
+        // If not watched, remove the watched date
+        userData.watchedDate = null;
       }
       
-      if (rating !== null) {
-        userData.rating = rating;
-      }
+      // Always include rating, even if null, to ensure it gets cleared when needed
+      userData.rating = rating;
       
-      if (review) {
-        userData.review = review;
-      }
+      // Always include review, set to empty string if cleared
+      userData.review = review || null;
       
-      if (userMovie) {
-        // Update existing record
-        await updateDoc(userMovieRef, userData);
-      } else {
-        // Create new record
-        await setDoc(userMovieRef, {
-          ...userData,
-          addedAt: new Date()
-        });
-      }
-      
-      // Refresh user movie data
-      const updatedUserMovieDoc = await getDoc(userMovieRef);
-      setUserMovie({ id: updatedUserMovieDoc.id, ...updatedUserMovieDoc.data() } as UserMovie);
+      // Use the utility function to save the user movie
+      const updatedUserMovie = await saveUserMovie(currentUser.uid, movieId, userData);
+      setUserMovie(updatedUserMovie);
       
     } catch (err) {
       console.error('Error saving movie data:', err);
@@ -124,8 +150,8 @@ const MovieDetailPage: React.FC = () => {
     try {
       setSaving(true);
       
-      const userMovieRef = doc(db, 'userMovies', `${currentUser.uid}_${movieId}`);
-      await deleteDoc(userMovieRef);
+      // Use the utility function to delete the user movie
+      await deleteUserMovie(currentUser.uid, movieId);
       
       navigate('/movies');
     } catch (err) {
@@ -182,10 +208,11 @@ const MovieDetailPage: React.FC = () => {
               <img 
                 src={movie.posterUrl} 
                 alt={movie.title} 
-                className="w-full h-auto"
+                className="w-full object-contain"
+                style={{ aspectRatio: '2/3' }}
               />
             ) : (
-              <div className="w-full h-96 flex items-center justify-center bg-gray-800">
+              <div className="w-full flex items-center justify-center bg-gray-800" style={{ aspectRatio: '2/3' }}>
                 <i className="fas fa-film text-6xl text-gray-500"></i>
               </div>
             )}

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Movie, UserMovie } from '../types/movie';
+import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
 
 const RandomMoviePage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -23,48 +22,10 @@ const RandomMoviePage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch user's movies
-        const userMoviesQuery = query(
-          collection(db, 'userMovies'),
-          where('userId', '==', currentUser.uid)
-        );
-        
-        const userMoviesSnapshot = await getDocs(userMoviesQuery);
-        const userMoviesMap: {[movieId: string]: UserMovie} = {};
-        const movieIds: string[] = [];
-        
-        userMoviesSnapshot.forEach((doc) => {
-          const userMovie = { id: doc.id, ...doc.data() } as UserMovie;
-          userMoviesMap[userMovie.movieId] = userMovie;
-          movieIds.push(userMovie.movieId);
-        });
+        // Use the utility function to get user movies with details
+        const { userMovies: userMoviesMap, movies: moviesData } = await getUserMoviesWithDetails(currentUser.uid);
         
         setUserMovies(userMoviesMap);
-        
-        // Fetch movie details
-        const moviesData: Movie[] = [];
-        
-        // If user has movies, fetch their details
-        if (movieIds.length > 0) {
-          // Firebase doesn't support 'in' queries with more than 10 items
-          // So we need to batch our requests
-          const batchSize = 10;
-          for (let i = 0; i < movieIds.length; i += batchSize) {
-            const batch = movieIds.slice(i, i + batchSize);
-            
-            const moviesQuery = query(
-              collection(db, 'movies'),
-              where('id', 'in', batch)
-            );
-            
-            const moviesSnapshot = await getDocs(moviesQuery);
-            
-            moviesSnapshot.forEach((doc) => {
-              moviesData.push({ id: doc.id, ...doc.data() } as Movie);
-            });
-          }
-        }
-        
         setMovies(moviesData);
       } catch (err) {
         console.error('Error fetching movies:', err);
@@ -183,15 +144,16 @@ const RandomMoviePage: React.FC = () => {
             <div className="mt-8 flex flex-col items-center">
               <div className="w-full max-w-md">
                 <div className="card bg-base-100 shadow-xl overflow-hidden">
-                  <figure className="relative h-96">
+                  <figure className="relative">
                     {randomMovie.posterUrl ? (
                       <img 
                         src={randomMovie.posterUrl} 
                         alt={randomMovie.title} 
-                        className="w-full h-full object-cover"
+                        className="w-full object-contain"
+                        style={{ aspectRatio: '2/3', maxHeight: '500px' }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                      <div className="w-full flex items-center justify-center bg-gray-800" style={{ aspectRatio: '2/3', maxHeight: '500px' }}>
                         <i className="fas fa-film text-6xl text-gray-500"></i>
                       </div>
                     )}

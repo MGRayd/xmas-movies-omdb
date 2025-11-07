@@ -15,12 +15,20 @@ const HomePage: React.FC = () => {
         
         <div className="flex flex-col md:flex-row justify-center gap-6 mb-12">
           {currentUser ? (
-            <Link 
-              to="/movies" 
-              className="btn btn-primary btn-lg text-xl px-8 py-3 rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border border-xmas-gold border-opacity-30"
-            >
-              <i className="fas fa-film mr-2"></i> My Movies
-            </Link>
+            <>
+              <Link 
+                to="/movies" 
+                className="btn btn-primary btn-lg text-xl px-8 py-3 rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border border-xmas-gold border-opacity-30"
+              >
+                <i className="fas fa-film mr-2"></i> My Movies
+              </Link>
+              <Link 
+                to="/random" 
+                className="btn btn-primary btn-lg text-xl px-8 py-3 rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border border-xmas-gold border-opacity-30"
+              >
+                <i className="fas fa-random mr-2"></i> Random Movie
+              </Link>
+            </>
           ) : (
             <Link 
               to="/login" 

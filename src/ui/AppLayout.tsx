@@ -82,9 +82,14 @@ export default function AppLayout() {
         <div className="flex-1"></div>
         
         <div className="flex items-center gap-1 sm:gap-2">
+          {currentUser && (
+            <Link to="/profile" className="btn btn-primary btn-sm hidden md:flex">
+              <i className="fas fa-user-circle mr-1"></i> Profile
+            </Link>
+          )}
           {currentUser ? (
             <div className="dropdown dropdown-end">
-              <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
+              <label tabIndex={0} className="btn btn-ghost btn-circle avatar cursor-pointer">
                 <div className="w-10 rounded-full border border-xmas-gold">
                   {currentUser.photoURL ? (
                     <img src={currentUser.photoURL} alt="Profile" />
@@ -95,7 +100,7 @@ export default function AppLayout() {
                   )}
                 </div>
               </label>
-              <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-xmas-card rounded-box w-52 border border-xmas-gold">
+              <ul tabIndex={0} className="dropdown-content menu menu-sm mt-3 z-[1] p-2 shadow bg-xmas-card rounded-box w-52 border border-xmas-gold">
                 <li>
                   <Link to="/profile" className="justify-between">
                     Profile

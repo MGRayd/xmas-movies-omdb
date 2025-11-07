@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { UserMovie } from '../types/movie';
+import { Movie, UserMovie } from '../types/movie';
+import { getUserMovies, getUserMoviesWithDetails } from '../utils/userMovieUtils';
+import { exportUserMoviesToCSV } from '../utils/exportUtils';
 
 const ProfilePage: React.FC = () => {
   const { currentUser, userProfile, signOut } = useAuth();
   
   const [tmdbApiKey, setTmdbApiKey] = useState('');
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [stats, setStats] = useState({
@@ -29,18 +32,8 @@ const ProfilePage: React.FC = () => {
       if (!currentUser) return;
       
       try {
-        // Fetch user's movies
-        const userMoviesQuery = query(
-          collection(db, 'userMovies'),
-          where('userId', '==', currentUser.uid)
-        );
-        
-        const userMoviesSnapshot = await getDocs(userMoviesQuery);
-        const userMovies: UserMovie[] = [];
-        
-        userMoviesSnapshot.forEach((doc) => {
-          userMovies.push({ id: doc.id, ...doc.data() } as UserMovie);
-        });
+        // Fetch user's movies using the new utility function
+        const userMovies = await getUserMovies(currentUser.uid);
         
         // Calculate stats
         const totalMovies = userMovies.length;
@@ -98,6 +91,37 @@ const ProfilePage: React.FC = () => {
       await signOut();
     } catch (err) {
       console.error('Error signing out:', err);
+    }
+  };
+
+  const handleExportMovies = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setExportLoading(true);
+      setError(null);
+      
+      // Get user movies with details
+      const { userMovies: userMoviesMap, movies: moviesData } = await getUserMoviesWithDetails(currentUser.uid);
+      
+      // Export to CSV and trigger download
+      await exportUserMoviesToCSV(
+        moviesData, 
+        userMoviesMap, 
+        userProfile.displayName || 'User'
+      );
+      
+      setSuccess('Movies exported successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+    } catch (err: any) {
+      console.error('Error exporting movies:', err);
+      setError(err.message || 'Failed to export movies');
+    } finally {
+      setExportLoading(false);
     }
   };
   
@@ -175,7 +199,22 @@ const ProfilePage: React.FC = () => {
               </ul>
             </div>
             
-            <div className="mt-6">
+            <div className="divider"></div>
+            
+            <div className="mt-6 space-y-3">
+              <button 
+                className="btn btn-outline btn-primary w-full"
+                onClick={handleExportMovies}
+                disabled={exportLoading || stats.totalMovies === 0}
+              >
+                {exportLoading ? (
+                  <span className="loading loading-spinner loading-sm mr-2"></span>
+                ) : (
+                  <i className="fas fa-file-export mr-2"></i>
+                )}
+                Export Movie Data
+              </button>
+              
               <button 
                 className="btn btn-outline btn-error w-full"
                 onClick={handleSignOut}

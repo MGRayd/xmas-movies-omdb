@@ -81,7 +81,7 @@ module.exports = {
       }),
     },
   },
-  plugins: [require('daisyui'), require('@tailwindcss/typography')],
+  plugins: [require('@tailwindcss/typography'), require('daisyui')],
   daisyui: {
     darkTheme: 'xmas',
     themes: [

@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Movie, TMDBMovie, ExcelMovieImport } from '../types/movie';
 import { searchMovies, getMovieDetails, formatTMDBMovie } from '../services/tmdbService';
+import { saveUserMovie } from '../utils/userMovieUtils';
 import * as XLSX from 'xlsx';
 
 const MovieImportPage: React.FC = () => {
@@ -98,15 +99,12 @@ const MovieImportPage: React.FC = () => {
         movieId = querySnapshot.docs[0].id;
       }
       
-      // Add to user's collection
-      const userMovieRef = doc(db, 'userMovies', `${currentUser.uid}_${movieId}`);
-      await setDoc(userMovieRef, {
+      // Add to user's collection using the new utility function
+      await saveUserMovie(currentUser.uid, movieId, {
         userId: currentUser.uid,
         movieId,
         watched: false,
-        favorite: false,
-        addedAt: new Date(),
-        updatedAt: new Date()
+        favorite: false
       });
       
       setSuccess('Movie added to your collection!');
@@ -174,7 +172,12 @@ const MovieImportPage: React.FC = () => {
   };
   
   const handleImportExcel = async () => {
-    if (!currentUser || !excelData.length) return;
+    if (!currentUser || !excelData.length || !tmdbApiKey) {
+      if (!tmdbApiKey) {
+        setError('TMDB API key is required for Excel import to match movies');
+      }
+      return;
+    }
     
     try {
       setLoading(true);
@@ -183,38 +186,69 @@ const MovieImportPage: React.FC = () => {
       
       const moviesRef = collection(db, 'movies');
       let imported = 0;
+      let skipped = 0;
+      let errors = 0;
       
       for (const movieData of excelData) {
-        // Create movie record
-        const movie: Omit<Movie, 'id'> = {
-          title: movieData.title,
-          releaseDate: movieData.releaseDate,
-          isChristmas: true,
-          addedAt: new Date(),
-          updatedAt: new Date()
-        };
+        try {
+          // Search for the movie in TMDB
+          const searchQuery = `${movieData.title} ${movieData.releaseDate || ''}`;
+          const searchResults = await searchMovies(searchQuery.trim(), tmdbApiKey);
+          
+          if (searchResults.results.length === 0) {
+            console.warn(`No TMDB match found for: ${movieData.title}`);
+            skipped++;
+            continue;
+          }
+          
+          // Get the best match (first result)
+          const bestMatch = searchResults.results[0];
+          
+          // Get full movie details
+          const movieDetails = await getMovieDetails(bestMatch.id, tmdbApiKey);
+          
+          // Check if movie with this TMDB ID already exists
+          const existingMovieQuery = query(moviesRef, where('tmdbId', '==', movieDetails.id));
+          const existingMovieSnapshot = await getDocs(existingMovieQuery);
+          
+          let movieId: string;
+          
+          if (existingMovieSnapshot.empty) {
+            // Create new movie record with TMDB data
+            const formattedMovie = {
+              ...formatTMDBMovie(movieDetails),
+              addedAt: new Date(),
+              updatedAt: new Date()
+            };
+            
+            const newMovieRef = await addDoc(moviesRef, formattedMovie);
+            movieId = newMovieRef.id;
+          } else {
+            // Use existing movie
+            movieId = existingMovieSnapshot.docs[0].id;
+          }
+          
+          // Add to user's collection using the new utility function
+          await saveUserMovie(currentUser.uid, movieId, {
+            userId: currentUser.uid,
+            movieId,
+            watched: movieData.watched || false,
+            rating: movieData.rating || null,
+            review: movieData.review || '',
+            favorite: false
+          });
+          
+          imported++;
+        } catch (err) {
+          console.error(`Error importing movie ${movieData.title}:`, err);
+          errors++;
+        }
         
-        const newMovieRef = await addDoc(moviesRef, movie);
-        const movieId = newMovieRef.id;
-        
-        // Add to user's collection
-        const userMovieRef = doc(db, 'userMovies', `${currentUser.uid}_${movieId}`);
-        await setDoc(userMovieRef, {
-          userId: currentUser.uid,
-          movieId,
-          watched: movieData.watched || false,
-          rating: movieData.rating || null,
-          review: movieData.review || '',
-          favorite: false,
-          addedAt: new Date(),
-          updatedAt: new Date()
-        });
-        
-        imported++;
-        setImportProgress(Math.round((imported / excelData.length) * 100));
+        setImportProgress(Math.round(((imported + skipped + errors) / excelData.length) * 100));
       }
       
-      setSuccess(`Successfully imported ${imported} movies!`);
+      const summary = `Import complete: ${imported} movies imported, ${skipped} skipped, ${errors} errors.`;
+      setSuccess(summary);
       setExcelData([]);
       setExcelFile(null);
       
@@ -232,9 +266,12 @@ const MovieImportPage: React.FC = () => {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
+      <div className="flex justify-between items-center mb-6">
         <Link to="/movies" className="btn btn-ghost">
           <i className="fas fa-arrow-left mr-2"></i> Back to Movies
+        </Link>
+        <Link to="/profile" className="btn btn-outline btn-primary">
+          <i className="fas fa-user-cog mr-2"></i> Profile Settings
         </Link>
       </div>
       
@@ -271,23 +308,20 @@ const MovieImportPage: React.FC = () => {
       
       {activeTab === 'tmdb' && (
         <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-          <div className="mb-6">
-            <label className="label">
-              <span className="label-text">TMDB API Key</span>
-            </label>
-            <input 
-              type="text" 
-              className="input input-bordered w-full" 
-              placeholder="Enter your TMDB API key"
-              value={tmdbApiKey}
-              onChange={(e) => setTmdbApiKey(e.target.value)}
-            />
-            <label className="label">
-              <span className="label-text-alt">
-                Don't have an API key? <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" className="link link-primary">Get one here</a>
-              </span>
-            </label>
-          </div>
+          {!tmdbApiKey ? (
+            <div className="alert alert-warning mb-6">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              <div className="flex-1">
+                <h3 className="font-bold">TMDB API Key Required</h3>
+                <p className="text-sm">
+                  You need to set your TMDB API key in your profile settings to search for movies.
+                </p>
+              </div>
+              <Link to="/profile" className="btn btn-sm btn-primary">
+                <i className="fas fa-user-cog mr-2"></i> Set API Key
+              </Link>
+            </div>
+          ) : null}
           
           <div className="flex gap-2 mb-6">
             <input 
@@ -408,6 +442,21 @@ const MovieImportPage: React.FC = () => {
       
       {activeTab === 'excel' && (
         <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
+          {!tmdbApiKey ? (
+            <div className="alert alert-warning mb-6">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              <div className="flex-1">
+                <h3 className="font-bold">TMDB API Key Required</h3>
+                <p className="text-sm">
+                  You need to set your TMDB API key in your profile settings to import movies from Excel.
+                </p>
+              </div>
+              <Link to="/profile" className="btn btn-sm btn-primary">
+                <i className="fas fa-user-cog mr-2"></i> Set API Key
+              </Link>
+            </div>
+          ) : null}
+          
           <div className="mb-6">
             <h2 className="text-xl font-bold mb-4">Import from Excel</h2>
             <p className="mb-4">
@@ -480,7 +529,7 @@ const MovieImportPage: React.FC = () => {
                 <button 
                   className="btn btn-primary"
                   onClick={handleImportExcel}
-                  disabled={loading}
+                  disabled={loading || !tmdbApiKey}
                 >
                   {loading ? (
                     <>

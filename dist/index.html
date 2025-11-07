@@ -10,11 +10,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for Christmas icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script type="module" crossorigin src="/assets/index-B9O0vXEt.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DIfVNPLt.css">
+    <script type="module" crossorigin src="/assets/index-DtwSUYgD.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-X-If00NG.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Fix for DaisyUI dropdowns
+      document.addEventListener('click', function(e) {
+        // Close all dropdowns when clicking outside
+        if (!e.target.closest('.dropdown')) {
+          document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+            dropdown.classList.remove('dropdown-open');
+          });
+        }
+      });
+    </script>
   </body>
 </html>
 
