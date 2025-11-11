@@ -223,7 +223,7 @@ useEffect(() => {
           <input
             type="text"
             className="input input-bordered input-sm sm:input-md w-full pl-8 pr-8"
-            placeholder="Search movies..."
+            placeholder="   Search movies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
