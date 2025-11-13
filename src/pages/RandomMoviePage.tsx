@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
+import { createMovieUrl } from '../utils/urlUtils';
 
 const RandomMoviePage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -181,8 +182,8 @@ const RandomMoviePage: React.FC = () => {
                     )}*/}
                     
                     <div className="card-actions justify-end mt-4">
-                      <Link 
-                        to={`/movies/${randomMovie.id}`} 
+                      <Link
+                        to={createMovieUrl(randomMovie.title, randomMovie.id)}
                         className="btn btn-primary"
                       >
                         View Details
