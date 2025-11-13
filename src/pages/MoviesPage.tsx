@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { createMovieUrl } from '../utils/urlUtils';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -363,7 +364,7 @@ useEffect(() => {
             return (
               <Link 
                 key={movie.id}
-                to={`/movies/${movie.id}`}
+                to={createMovieUrl(movie.title, movie.id)}
                 className="block transition-transform hover:scale-[1.02] hover:shadow-xl"
               >
                 <div className="relative rounded-lg overflow-hidden bg-xmas-card shadow-md h-full flex flex-col">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { getMovieIdFromUrl } from '../utils/urlUtils';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,9 +9,13 @@ import { getUserMovie, saveUserMovie, deleteUserMovie } from '../utils/userMovie
 import { bumpWatchedTotal } from '../utils/stats';
 
 const MovieDetailPage: React.FC = () => {
-  const { movieId } = useParams<{ movieId: string }>();
+  const { movieId: slugParam } = useParams<{ movieId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  
+  // Get the actual movie ID from the URL query parameter
+  const movieId = getMovieIdFromUrl(location.search);
   
   const [movie, setMovie] = useState<Movie | null>(null);
   const [userMovie, setUserMovie] = useState<UserMovie | null>(null);
@@ -27,7 +32,11 @@ const MovieDetailPage: React.FC = () => {
 
   useEffect(() => {
     const fetchMovieData = async () => {
-      if (!currentUser || !movieId) return;
+      if (!currentUser || !movieId) {
+        setError('Movie not found');
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
