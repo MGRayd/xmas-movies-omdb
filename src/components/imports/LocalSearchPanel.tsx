@@ -4,8 +4,13 @@ import { searchLocalMovies } from '../../services/searchService';
 import { TMDBMovie } from '../../types/movie';
 import { posterSrc } from '../../utils/matching';
 
+type LocalMovieLike = TMDBMovie & {
+  source?: 'local';
+  firestoreId?: string;
+};
+
 type Props = {
-  onSelect: (movieLike: TMDBMovie) => void; // expects id = tmdbId for follow-up details fetch
+  onSelect: (movieLike: LocalMovieLike) => void;
 };
 
 const LocalSearchPanel: React.FC<Props> = ({ onSelect }) => {
@@ -20,20 +25,18 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect }) => {
       setError('Please enter a search term');
       return;
     }
-    
     if (trimmedQ.length < 2) {
       setError('Search term must be at least 2 characters');
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
       setResults([]);
-      
+
       const local = await searchLocalMovies(trimmedQ);
-      console.log('Search results:', local); // For debugging
-      
+
       const mapped = local
         .filter((m: any) => m.tmdbId)
         .map((m: any) => ({
@@ -43,10 +46,12 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect }) => {
           poster_path: m.posterUrl?.startsWith('https://image.tmdb.org/t/p/')
             ? m.posterUrl.replace('https://image.tmdb.org/t/p/w500', '')
             : null,
-        })) as TMDBMovie[];
-      
+          source: 'local' as const,
+          firestoreId: m.id,          // <— keep a reference to the catalogue doc
+        })) as LocalMovieLike[];
+
       setResults(mapped);
-      
+
       if (mapped.length === 0) {
         setError(`No movies found matching "${trimmedQ}". Try a different search term.`);
       }

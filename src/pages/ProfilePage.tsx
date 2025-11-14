@@ -12,6 +12,7 @@ import { updateMoviesWithSortTitles } from '../utils/migrationUtils';
 const ProfilePage: React.FC = () => {
   const { currentUser, userProfile, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const [showTmdbKey, setShowTmdbKey] = useState(false);
   
   const [tmdbApiKey, setTmdbApiKey] = useState('');
   const [loading, setLoading] = useState(false);
@@ -251,47 +252,73 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
         
-        {/* Settings */}
         <div className="md:col-span-2">
           <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">Settings</h2>
             
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-2">TMDB API Key</h3>
-              <p className="mb-4">
-                Your TMDB API key is used to search for movies and fetch movie details.
-                If you don't have one, you can get it for free from <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" className="link link-primary">The Movie Database</a>.
-              </p>
-              
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">API Key</span>
-                </label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input 
-                    type="text" 
-                    className="input input-bordered flex-1 h-12 text-lg" 
-                    value={tmdbApiKey}
-                    onChange={(e) => setTmdbApiKey(e.target.value)}
-                    placeholder="Enter your TMDB API key"
-                  />
-                  <button 
-                    className="btn btn-primary w-full sm:w-auto"
-                    onClick={handleSaveApiKey}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span className="loading loading-spinner loading-sm"></span>
-                    ) : (
-                      <i className="fas fa-save"></i>
-                    )}
-                  </button>
+            {/* Settings + TMDB key – ADMIN ONLY */}
+            {isAdmin && (
+              <>
+                <h2 className="text-2xl font-bold mb-4">Settings</h2>
+
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold mb-2">TMDB API Key</h3>
+                  <p className="mb-4">
+                    Your TMDB API key is used to search for movies and fetch movie details.
+                    If you don't have one, you can get it for free from{' '}
+                    <a
+                      href="https://www.themoviedb.org/settings/api"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link link-primary"
+                    >
+                      The Movie Database
+                    </a>.
+                  </p>
+
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">API Key</span>
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+                      <input
+                        type={showTmdbKey ? "text" : "password"}
+                        className="input input-bordered flex-1 h-12 text-lg"
+                        value={tmdbApiKey}
+                        onChange={(e) => setTmdbApiKey(e.target.value)}
+                        placeholder="Enter your TMDB API key"
+                        style={{ letterSpacing: showTmdbKey ? "normal" : "3px" }} // makes masking nicer
+                      />
+
+                      {/* Toggle visibility */}
+                      <button
+                        type="button"
+                        className="btn btn-ghost w-12"
+                        onClick={() => setShowTmdbKey((s) => !s)}
+                      >
+                        <i className={`fas ${showTmdbKey ? "fa-eye-slash" : "fa-eye"}`}></i>
+                      </button>
+
+                      {/* Save button */}
+                      <button
+                        className="btn btn-primary w-full sm:w-auto"
+                        onClick={handleSaveApiKey}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                          <i className="fas fa-save"></i>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            
-            <div className="divider"></div>
-            
+
+                <div className="divider"></div>
+              </>
+            )}
+
+            {/* QUICK LINKS – EVERYONE */}
             <div className="mb-6">
               <h3 className="text-lg font-bold mb-2">Quick Links</h3>
               <div className="flex flex-wrap gap-2">
@@ -309,20 +336,21 @@ const ProfilePage: React.FC = () => {
                 </Link>
               </div>
             </div>
-            
+
+            {/* ADMIN TOOLS – already admin-only */}
             {isAdmin && (
               <>
                 <div className="divider"></div>
-                
                 <div className="mb-6">
                   <h3 className="text-lg font-bold mb-2">Admin Tools</h3>
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium mb-1">Sort Title Migration</h4>
                       <p className="text-sm mb-2">
-                        Update all movies to include sort titles (e.g., "The Grinch" → "Grinch") for better alphabetical sorting.
+                        Update all movies to include sort titles (e.g., "The Grinch" → "Grinch") for better
+                        alphabetical sorting.
                       </p>
-                      <button 
+                      <button
                         className="btn btn-outline btn-warning btn-sm"
                         onClick={handleUpdateSortTitles}
                         disabled={migrationLoading}

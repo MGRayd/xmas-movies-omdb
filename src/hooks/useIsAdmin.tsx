@@ -1,7 +1,7 @@
+// src/hooks/useIsAdmin.ts
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, getIdTokenResult } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth } from '../firebase';
 
 interface UseIsAdminResult {
   isAdmin: boolean;
@@ -20,7 +20,7 @@ export const useIsAdmin = (): UseIsAdminResult => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       setError(null);
-      
+
       if (!user) {
         setIsAdmin(false);
         setCurrentUser(null);
@@ -28,27 +28,15 @@ export const useIsAdmin = (): UseIsAdminResult => {
         return;
       }
 
-      setCurrentUser({
-        uid: user.uid,
-        email: user.email
-      });
+      setCurrentUser({ uid: user.uid, email: user.email });
 
       try {
-        // First check for admin custom claim
-        const tokenResult = await getIdTokenResult(user);
+        // forceRefresh: true so we get the latest custom claims
+        const tokenResult = await getIdTokenResult(user, true);
+        // admin-manager.cjs sets { admin: true }
         const hasAdminClaim = tokenResult.claims.admin === true;
-        
-        if (hasAdminClaim) {
-          setIsAdmin(true);
-          setLoading(false);
-          return;
-        }
-        
-        // Fallback: check if user is in admins collection
-        const adminRef = doc(db, 'admins', user.uid);
-        const adminDoc = await getDoc(adminRef);
-        
-        setIsAdmin(adminDoc.exists());
+
+        setIsAdmin(hasAdminClaim);
       } catch (err) {
         console.error('Error checking admin status:', err);
         setError('Failed to verify admin status');
