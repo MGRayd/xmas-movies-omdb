@@ -30,6 +30,7 @@ export interface UserMovie {
   favorite: boolean;
   addedAt: Date;
   updatedAt: Date;
+  vibeTags?: string[];
 }
 
 export interface User {

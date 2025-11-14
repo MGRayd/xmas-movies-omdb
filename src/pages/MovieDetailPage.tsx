@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMovie, saveUserMovie, deleteUserMovie } from '../utils/userMovieUtils';
 import { bumpWatchedTotal } from '../utils/stats';
+import VibeReview from '../components/VibeReview'; // ⭐ NEW
 
 const MovieDetailPage: React.FC = () => {
   const { movieId: slugParam } = useParams<{ movieId: string }>();
@@ -29,6 +30,7 @@ const MovieDetailPage: React.FC = () => {
   const [rating, setRating] = useState<number | null>(null);
   const [review, setReview] = useState('');
   const [favorite, setFavorite] = useState(false);
+  const [vibeTags, setVibeTags] = useState<string[]>([]); // ⭐ NEW
 
   useEffect(() => {
     const fetchMovieData = async () => {
@@ -91,6 +93,7 @@ const MovieDetailPage: React.FC = () => {
           setRating(userMovieData.rating || null);
           setReview(userMovieData.review || '');
           setFavorite(userMovieData.favorite);
+          setVibeTags(userMovieData.vibeTags || []); // ⭐ NEW
         }
       } catch (err) {
         console.error('Error fetching movie data:', err);
@@ -114,7 +117,8 @@ const MovieDetailPage: React.FC = () => {
         movieId,
         watched,
         favorite,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        vibeTags, // ⭐ NEW
       };
       
       // Add optional fields
@@ -155,43 +159,44 @@ const MovieDetailPage: React.FC = () => {
   };
 
   const handleToggleFavorite = async () => {
-  if (!currentUser || !movieId) return;
+    if (!currentUser || !movieId) return;
 
-  const next = !favorite;
-  setFavorite(next); // optimistic UI
+    const next = !favorite;
+    setFavorite(next); // optimistic UI
 
-  try {
-    const ref = doc(db, 'users', currentUser.uid, 'movies', movieId);
-    const snap = await getDoc(ref);
+    try {
+      const ref = doc(db, 'users', currentUser.uid, 'movies', movieId);
+      const snap = await getDoc(ref);
 
-    if (snap.exists()) {
-      // Only update the one field + updatedAt
-      await updateDoc(ref, {
-        favorite: next,
-        updatedAt: new Date(),
-      });
-    } else {
-      // Create minimal doc so Favorites works immediately
-      await setDoc(ref, {
-        userId: currentUser.uid,
-        movieId,
-        favorite: next,
-        watched: false,
-        rating: null,
-        review: '',
-        addedAt: new Date(),
-        updatedAt: new Date(),
-      }, { merge: true });
+      if (snap.exists()) {
+        // Only update the one field + updatedAt
+        await updateDoc(ref, {
+          favorite: next,
+          updatedAt: new Date(),
+        });
+      } else {
+        // Create minimal doc so Favorites works immediately
+        await setDoc(ref, {
+          userId: currentUser.uid,
+          movieId,
+          favorite: next,
+          watched: false,
+          rating: null,
+          review: '',
+          vibeTags: [], // ⭐ NEW (keep shape consistent)
+          addedAt: new Date(),
+          updatedAt: new Date(),
+        }, { merge: true });
+      }
+
+      // reflect in local userMovie so the page shows current state
+      setUserMovie((u) => (u ? { ...u, favorite: next } : u));
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
+      // revert on error
+      setFavorite(!next);
     }
-
-    // reflect in local userMovie so the page shows current state
-    setUserMovie((u) => (u ? { ...u, favorite: next } : u));
-  } catch (err) {
-    console.error('Failed to toggle favorite', err);
-    // revert on error
-    setFavorite(!next);
-  }
-};
+  };
 
   const handleDelete = async () => {
     if (!currentUser || !movieId || !window.confirm('Are you sure you want to remove this movie from your collection?')) return;
@@ -212,49 +217,50 @@ const MovieDetailPage: React.FC = () => {
 
   // Watched
   const handleToggleWatched = async () => {
-  if (!currentUser || !movieId) return;
+    if (!currentUser || !movieId) return;
 
-  const next = !watched;
-  setWatched(next); // optimistic
+    const next = !watched;
+    setWatched(next); // optimistic
 
-  try {
-    const ref = doc(db, 'users', currentUser.uid, 'movies', movieId);
-    const snap = await getDoc(ref);
-    const prev = snap.exists() ? !!snap.data().watched : false;
+    try {
+      const ref = doc(db, 'users', currentUser.uid, 'movies', movieId);
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? !!snap.data().watched : false;
 
-    if (snap.exists()) {
-      await updateDoc(ref, {
-        watched: next,
-        // optionally clear watchedDate when turning off
-        ...(next ? {} : { watchedDate: null }),
-        updatedAt: new Date(),
-      });
-    } else {
-      await setDoc(ref, {
-        userId: currentUser.uid,
-        movieId,
-        watched: next,
-        favorite: false,
-        rating: null,
-        review: '',
-        addedAt: new Date(),
-        updatedAt: new Date(),
-      }, { merge: true });
+      if (snap.exists()) {
+        await updateDoc(ref, {
+          watched: next,
+          // optionally clear watchedDate when turning off
+          ...(next ? {} : { watchedDate: null }),
+          updatedAt: new Date(),
+        });
+      } else {
+        await setDoc(ref, {
+          userId: currentUser.uid,
+          movieId,
+          watched: next,
+          favorite: false,
+          rating: null,
+          review: '',
+          vibeTags: [], // ⭐ NEW
+          addedAt: new Date(),
+          updatedAt: new Date(),
+        }, { merge: true });
+      }
+
+      // reflect locally
+      setUserMovie((u) => (u ? { ...u, watched: next } : u));
+
+      // bump global stats only if the value actually changed
+      if (prev !== next) {
+        await bumpWatchedTotal(next ? 1 : -1);
+      }
+
+    } catch (err) {
+      console.error('Failed to toggle watched', err);
+      setWatched(!next); // revert
     }
-
-    // reflect locally
-    setUserMovie((u) => (u ? { ...u, watched: next } : u));
-
-    // bump global stats only if the value actually changed
-    if (prev !== next) {
-      await bumpWatchedTotal(next ? 1 : -1);
-    }
-
-  } catch (err) {
-    console.error('Failed to toggle watched', err);
-    setWatched(!next); // revert
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -443,8 +449,19 @@ const MovieDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* ⭐ NEW: VibeReview helper */}
+          <VibeReview
+            rating={rating}
+            initialTags={vibeTags}
+            initialAutoReview={review}
+            onChange={({ tags, autoReview }) => {
+              setVibeTags(tags);
+              setReview(autoReview);
+            }}
+          />
           
-          <div className="form-control mb-6">
+          <div className="form-control mb-6 mt-4">
             <label className="label">
               <span className="label-text">Your Review</span>
             </label>
