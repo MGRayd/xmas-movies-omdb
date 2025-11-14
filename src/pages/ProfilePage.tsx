@@ -341,32 +341,18 @@ const ProfilePage: React.FC = () => {
             {isAdmin && (
               <>
                 <div className="divider"></div>
+
                 <div className="mb-6">
                   <h3 className="text-lg font-bold mb-2">Admin Tools</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-1">Sort Title Migration</h4>
-                      <p className="text-sm mb-2">
-                        Update all movies to include sort titles (e.g., "The Grinch" → "Grinch") for better
-                        alphabetical sorting.
-                      </p>
-                      <button
-                        className="btn btn-outline btn-warning btn-sm"
-                        onClick={handleUpdateSortTitles}
-                        disabled={migrationLoading}
-                      >
-                        {migrationLoading ? (
-                          <span className="loading loading-spinner loading-sm mr-2"></span>
-                        ) : (
-                          <i className="fas fa-sort-alpha-down mr-2"></i>
-                        )}
-                        Update Sort Titles
-                      </button>
-                    </div>
-                  </div>
+
+                  <Link to="/admin" className="btn btn-primary btn-sm">
+                    <i className="fas fa-tools mr-2"></i>
+                    Open Admin Dashboard
+                  </Link>
                 </div>
               </>
             )}
+
           </div>
         </div>
       </div>
