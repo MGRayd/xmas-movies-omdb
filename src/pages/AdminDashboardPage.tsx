@@ -3,12 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useIsAdmin } from '../hooks/useIsAdmin';
+import { useAuth } from '../contexts/AuthContext';
 import { updateMoviesWithSortTitles } from '../utils/migrationUtils';
 import { upsertMoviesByTmdbIds } from '../utils/catalogueImportUtils';
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: adminCheckLoading } = useIsAdmin();
+  const { userProfile } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,12 @@ const AdminDashboardPage: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
+
+  useEffect(() => {
+    if (userProfile?.tmdbApiKey) {
+      setTmdbApiKey(userProfile.tmdbApiKey);
+    }
+  }, [userProfile]);
 
   // Redirect if not admin
   useEffect(() => {
@@ -236,17 +244,6 @@ const AdminDashboardPage: React.FC = () => {
                 Bulk-import TMDB titles into your <code>movies</code> catalogue only — no user collections will be updated.
               </p>
 
-              <label className="label mt-2">
-                <span className="label-text">TMDB API Key</span>
-              </label>
-              <input
-                type="password"
-                className="input input-bordered w-full"
-                value={tmdbApiKey}
-                onChange={(e) => setTmdbApiKey(e.target.value)}
-                placeholder="TMDB_API_KEY"
-              />
-
               <label className="label mt-4">
                 <span className="label-text">TMDB IDs (comma / space / newline separated)</span>
               </label>
@@ -277,7 +274,7 @@ const AdminDashboardPage: React.FC = () => {
                   className="btn btn-primary ml-auto"
                   onClick={handleCatalogueImport}
                   disabled={importing || parsedIds.length === 0 || !tmdbApiKey}
-                  title={!tmdbApiKey ? 'Enter TMDB API Key' : undefined}
+                  title={!tmdbApiKey ? 'Add your TMDB API key in Profile > Settings' : undefined}
                 >
                   {importing ? (
                     <>

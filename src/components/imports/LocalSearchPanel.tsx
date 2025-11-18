@@ -29,6 +29,7 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchField, setSearchField] = useState<SearchField>('all');
   const [sortOption, setSortOption] = useState<SortOption>('title-asc');
+  const [hideOwned, setHideOwned] = useState(false);
 
   // Load ALL catalogue movies once
   useEffect(() => {
@@ -101,8 +102,16 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
   );
 
   const filteredMovies = useMemo(
-    () => allMovies.filter((m) => matchesSearch(m)),
-    [allMovies, matchesSearch]
+    () =>
+      allMovies.filter((m) => {
+        if (!matchesSearch(m)) return false;
+
+        const isOwned = !!m.firestoreId && userMovieIds.includes(m.firestoreId);
+        if (hideOwned && isOwned) return false;
+
+        return true;
+      }),
+    [allMovies, matchesSearch, userMovieIds, hideOwned]
   );
 
   // Sorting logic (title / year)
@@ -194,7 +203,7 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
       </div>
 
       {/* Count / status */}
-      <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center text-xs sm:text-sm">
+      <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center text-xs sm:text-sm gap-2">
         <div>
           {loading ? (
             <span>Loading catalogue…</span>
@@ -210,6 +219,15 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
             </>
           )}
         </div>
+        <label className="flex items-center gap-1 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-xs sm:checkbox-sm"
+            checked={hideOwned}
+            onChange={(e) => setHideOwned(e.target.checked)}
+          />
+          <span>Hide owned movies</span>
+        </label>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}

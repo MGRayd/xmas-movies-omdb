@@ -106,7 +106,7 @@ useEffect(() => {
               {watchedTotal ?? '–'}
             </div>
             <p className="text-xmas-text text-opacity-80 text-center">
-              movies watched by everyone
+              total movies watched
             </p>
           </div>
         </div>
