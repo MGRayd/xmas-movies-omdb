@@ -198,7 +198,7 @@ useEffect(() => {
             <i className="fas fa-random mr-1 sm:mr-2"></i> <span className="hidden xs:inline">Random Movie</span><span className="xs:hidden">Random</span>
           </Link>
           <Link to="/import" className="btn btn-primary btn-sm sm:btn-md">
-            <i className="fas fa-file-import mr-1 sm:mr-2"></i> <span className="hidden xs:inline">Import Movies</span><span className="xs:hidden">Import</span>
+            <i className="fas fa-file-import mr-1 sm:mr-2"></i> <span className="hidden xs:inline">Add Movies</span><span className="xs:hidden">Import</span>
           </Link>
         </div>
       </div>

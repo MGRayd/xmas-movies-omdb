@@ -170,11 +170,18 @@ useEffect(() => {
       <footer className="text-center text-xmas-mute mt-12 pb-8 space-y-4">
         <p>© {new Date().getFullYear()} Christmas Movie Database</p>
         <div className="flex flex-col items-center justify-center gap-2 text-xs md:text-sm text-xmas-mute/80">
+          <a
+                  href={`https://www.themoviedb.org`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn flex items-center justify-center gap-2"
+                >
           <img
             src="/tmdb.svg"
             alt="TMDB logo"
             className="h-6 md:h-8 w-auto mb-1"
           />
+          </a>
           <p className="max-w-xl px-4">
             This product uses the TMDB API but is not endorsed or certified by TMDB.
           </p>
