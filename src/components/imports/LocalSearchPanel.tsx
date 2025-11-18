@@ -55,6 +55,9 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
               source: 'local' as const,
               firestoreId: doc.id,
               cast: data.cast || [],
+              runtime: data.runtime,
+              genres: data.genres || [],
+              overview: data.overview,
             };
           })
           .filter(Boolean) as LocalMovieLike[];

@@ -20,6 +20,7 @@ const MovieImportPage: React.FC = () => {
   const [tmdbApiKey, setTmdbApiKey] = useState('');
   const [active, setActive] = useState<'local' | 'tmdb' | 'excel'>('local');
   const [selected, setSelected] = useState<any | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
@@ -57,6 +58,7 @@ const MovieImportPage: React.FC = () => {
   // Local flow – no TMDB call needed (will just show the basic card)
   const onSelectLocal = (movieLike: TMDBMovie) => {
     setMsg(null);
+    setShowDetails(false);
     setSelected(movieLike); // opens modal
   };
 
@@ -73,6 +75,7 @@ const MovieImportPage: React.FC = () => {
     try {
       setLoading(true);
       setMsg(null);
+      setShowDetails(false);
       const details = await getMovieDetails(movieLike.id, tmdbApiKey);
       setSelected(details); // opens modal with full TMDB details
     } catch (e: any) {
@@ -121,6 +124,7 @@ const MovieImportPage: React.FC = () => {
       );
 
       setMsg({ type: 'success', text: 'Added to your collection!' });
+      setShowDetails(false);
       setSelected(null); // close modal
     } catch (e: any) {
       setMsg({ type: 'error', text: e?.message ?? 'Failed to add movie' });
@@ -256,37 +260,88 @@ const MovieImportPage: React.FC = () => {
 
               <div className="flex-1">
                 <h2 className="text-xl font-bold mb-1">{selected.title}</h2>
-                <p className="text-sm opacity-80 mb-2">
+                <p className="text-sm opacity-80 mb-1">
                   {selected.release_date?.slice(0, 4)}
                 </p>
-                {selected.overview && (
-                  <p className="text-sm opacity-80 max-h-32 overflow-auto pr-1">
-                    {selected.overview}
+                {!showDetails && selected.runtime && (
+                  <p className="text-sm opacity-80 mb-1">
+                    Runtime: {selected.runtime} min
                   </p>
+                )}
+
+                {showDetails && (
+                  <div className="mt-3 space-y-2 text-sm opacity-90 max-h-48 overflow-auto pr-1">
+                    {selected.overview && (
+                      <div>
+                        <p className="font-semibold mb-1">Overview</p>
+                        <p>{selected.overview}</p>
+                      </div>
+                    )}
+                    {selected.runtime && (
+                      <p>
+                        <span className="font-semibold">Runtime:</span> {selected.runtime} min
+                      </p>
+                    )}
+                    {selected.genres && selected.genres.length > 0 && (
+                      <p>
+                        <span className="font-semibold">Genres:</span>{' '}
+                        {selected.genres
+                          .map((g: any) => (typeof g === 'string' ? g : g.name))
+                          .join(', ')}
+                      </p>
+                    )}
+                    {(selected.credits?.cast?.length || selected.cast?.length) && (
+                      <p>
+                        <span className="font-semibold">Top cast:</span>{' '}
+                        {(selected.credits?.cast && selected.credits.cast.length > 0
+                          ? selected.credits.cast.map((c: any) => c.name)
+                          : selected.cast
+                        )
+                          .slice(0, 5)
+                          .join(', ')}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                className="btn btn-primary btn-sm sm:btn-md"
-                onClick={addToCollection}
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="loading loading-spinner loading-sm mr-2" />
-                ) : (
-                  <i className="fas fa-plus mr-2" />
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                {(selected.overview || selected.runtime || selected.genres || selected.credits || selected.cast) && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs sm:btn-sm normal-case gap-2"
+                    onClick={() => setShowDetails((prev) => !prev)}
+                    disabled={loading}
+                  >
+                    <i className="fas fa-info-circle text-xs" />
+                    {showDetails ? 'Hide details' : 'View details'}
+                  </button>
                 )}
-                Add to My Collection
-              </button>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={closeModal}
-                disabled={loading}
-              >
-                Cancel
-              </button>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  className="btn btn-primary btn-sm sm:btn-md"
+                  onClick={addToCollection}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="loading loading-spinner loading-sm mr-2" />
+                  ) : (
+                    <i className="fas fa-plus mr-2" />
+                  )}
+                  Add to My Collection
+                </button>
+                <button
+                  className="btn btn-outline btn-sm sm:btn-md"
+                  onClick={closeModal}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
 
