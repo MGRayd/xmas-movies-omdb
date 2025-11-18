@@ -321,11 +321,11 @@ const MovieDetailPage: React.FC = () => {
           
           <div className="mt-4 flex flex-col gap-2">
             <button
-              className={`btn ${favorite ? 'btn-warning' : 'btn-outline'} w-full`}
+              className={`btn ${favorite ? 'btn-primary' : 'btn-outline'} w-full`}
               onClick={handleToggleFavorite}
             >
               <i className={`fas fa-star mr-2 ${favorite ? 'text-white' : ''}`}></i>
-              {favorite ? 'Favorited' : 'Add to Favorites'}
+              {favorite ? 'Favourited' : 'Add to Favourites'}
             </button>
             
             <button 
@@ -344,6 +344,25 @@ const MovieDetailPage: React.FC = () => {
               <i className="fas fa-trash mr-2"></i>
               Remove from Collection
             </button>
+            {movie.tmdbId && (
+              <div className="mt-2 flex flex-col items-center">
+                <a
+                  href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline w-full flex items-center justify-center gap-2"
+                >
+                  <img
+                    src="/tmdb.svg"
+                    alt="TMDB"
+                    className="h-5"
+                  />
+                </a>
+                <p className="mt-2 text-xs text-gray-400 text-center">
+                  This product uses the TMDB API but is not endorsed or certified by TMDB.
+                </p>
+              </div>
+            )}
           </div>
         </div>
         
