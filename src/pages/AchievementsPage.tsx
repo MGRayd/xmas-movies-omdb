@@ -123,12 +123,12 @@ const AchievementsPage: React.FC = () => {
             return a.unlocked ? -1 : 1;
           }
 
-          // If both are unlocked and have dates, sort by unlockedAt (most recent first)
+          // If both are unlocked and have dates, sort by unlockedAt (oldest first)
           if (a.unlocked && b.unlocked) {
             const aTime = a.unlockedAt ? a.unlockedAt.getTime() : 0;
             const bTime = b.unlockedAt ? b.unlockedAt.getTime() : 0;
             if (aTime !== bTime) {
-              return bTime - aTime;
+              return aTime - bTime;
             }
           }
 

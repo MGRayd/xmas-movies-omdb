@@ -250,6 +250,26 @@ export default function AppLayout() {
                     </li>
                     <li>
                       <NavLink 
+                        to="/achievements" 
+                        onClick={toggleMobileMenu}
+                        className={({isActive}) => 
+                          isActive 
+                            ? 'flex items-center p-2 pl-3 rounded-md bg-gradient-to-r from-xmas-card to-transparent border-l-2 border-xmas-gold text-xmas-gold font-medium' 
+                            : 'flex items-center p-2 pl-3 rounded-md hover:bg-xmas-card hover:bg-opacity-50 text-xmas-text hover:text-xmas-gold transition-all duration-200'
+                        }
+                      >
+                        {({isActive}) => (
+                          <>
+                            <i className="fas fa-trophy mr-3 text-xmas-gold"></i> 
+                            <span>Achievements</span>
+                            {/* Snowflake indicator */}
+                            <i className={`fas fa-snowflake ml-auto text-xmas-gold opacity-70 ${isActive ? 'visible' : 'invisible'}`}></i>
+                          </>
+                        )}
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink 
                         to="/import" 
                         onClick={toggleMobileMenu}
                         className={({isActive}) => 
@@ -261,7 +281,7 @@ export default function AppLayout() {
                         {({isActive}) => (
                           <>
                             <i className="fas fa-file-import mr-3 text-xmas-gold"></i> 
-                            <span>Import Movies</span>
+                            <span>Add Movies</span>
                             {/* Snowflake indicator */}
                             <i className={`fas fa-snowflake ml-auto text-xmas-gold opacity-70 ${isActive ? 'visible' : 'invisible'}`}></i>
                           </>

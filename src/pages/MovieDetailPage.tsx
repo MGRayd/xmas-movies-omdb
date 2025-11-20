@@ -8,6 +8,7 @@ import { Movie, UserMovie } from '../types/movie';
 import { getUserMovie, saveUserMovie, deleteUserMovie } from '../utils/userMovieUtils';
 import { bumpWatchedTotal } from '../utils/stats';
 import VibeReview from '../components/VibeReview'; // ⭐ NEW
+import UserRatingReview from '../components/UserRatingReview';
 import { ACHIEVEMENTS, checkAndUnlockAchievements } from '../utils/achievements';
 import { useToast } from '../ui/ToastProvider';
 
@@ -452,94 +453,25 @@ const MovieDetailPage: React.FC = () => {
           )}
           
           <div className="divider"></div>
-          
-          {/* User Rating and Review */}
-          <h2 className="text-2xl font-christmas text-xmas-gold mb-4">Your Rating & Review</h2>
-          
-          {watched && (
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">Date Watched</span>
-              </label>
-              <input 
-                type="date" 
-                className="input input-bordered" 
-                value={watchedDate}
-                onChange={(e) => setWatchedDate(e.target.value)}
-              />
-            </div>
-          )}
-          
-          <div className="form-control mb-4">
-            <label className="label">
-              <span className="label-text">Your Rating</span>
-            </label>
-            <div className="rating rating-lg">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                <input 
-                  key={value}
-                  type="radio" 
-                  name="rating" 
-                  className={`mask mask-star-2 ${value <= 5 ? 'bg-orange-400' : 'bg-yellow-400'}`}
-                  checked={rating === value}
-                  onChange={() => setRating(value)}
-                />
-              ))}
-            </div>
-            {rating && (
-              <div className="mt-2">
-                <button 
-                  className="btn btn-xs btn-ghost"
-                  onClick={() => setRating(null)}
-                >
-                  Clear Rating
-                </button>
-              </div>
-            )}
-          </div>
 
-          {/* ⭐ NEW: VibeReview helper */}
-          <VibeReview
-            rating={rating}
-            initialTags={vibeTags}
-            initialAutoReview={review}
-            onChange={({ tags, autoReview }) => {
-              setVibeTags(tags);
-              setReview(autoReview);
-            }}
-          />
-          
-          <div className="form-control mb-6 mt-4">
-            <label className="label">
-              <span className="label-text">Your Review</span>
-            </label>
-            <textarea 
-              className="textarea textarea-bordered h-32" 
-              placeholder="Write your thoughts about this movie..."
-              value={review}
-              onChange={(e) => setReview(e.target.value)}
-            ></textarea>
-          </div>
-          
-          <div className="flex justify-end">
-            <button 
-              className="btn btn-primary btn-sm sm:btn-md"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <span className="loading loading-spinner loading-sm mr-2"></span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save mr-2"></i>
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
+          {watched && (
+            <UserRatingReview
+              watched={watched}
+              watchedDate={watchedDate}
+              onWatchedDateChange={setWatchedDate}
+              rating={rating}
+              onRatingChange={setRating}
+              review={review}
+              onReviewChange={setReview}
+              vibeTags={vibeTags}
+              onVibeChange={({ tags, autoReview }) => {
+                setVibeTags(tags);
+                setReview(autoReview);
+              }}
+              saving={saving}
+              onSave={handleSave}
+            />
+          )}
         </div>
       </div>
     </div>
