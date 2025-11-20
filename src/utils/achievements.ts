@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
-import { Movie, UserMovie } from './types/movie';
+import { db } from '../firebase';
+import { Movie, UserMovie } from '../types/movie';
 
 export interface AchievementDefinition {
   id: string;
@@ -120,7 +120,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'romcom_reindeer',
     name: 'Rom-Com Reindeer',
-    description: 'You love a festive meet-cute.',
+    description: 'You love a festive rom-com.',
     hint: 'Watch 5 Christmas romance movies.',
     icon: '💘',
     check: (s) => s.romanceCount >= 5,

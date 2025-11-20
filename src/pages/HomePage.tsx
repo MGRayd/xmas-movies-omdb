@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, collectionGroup, query, where, getCountFromServer, doc, getDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ACHIEVEMENTS } from '../achievements';
+import { ACHIEVEMENTS } from '../utils/achievements';
 
 const HomePage: React.FC = () => {
   const { currentUser } = useAuth();

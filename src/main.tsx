@@ -8,6 +8,7 @@ import './ui/typography.css'
 
 // Import authentication context
 import { AuthProvider } from './contexts/AuthContext'
+import { ToastProvider } from './ui/ToastProvider'
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute'
@@ -66,7 +67,9 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </AuthProvider>
   </React.StrictMode>
 )

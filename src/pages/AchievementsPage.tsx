@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { ACHIEVEMENTS, checkAndUnlockAchievements } from '../achievements';
+import { ACHIEVEMENTS, checkAndUnlockAchievements } from '../utils/achievements';
 
 interface AchievementDocData {
   unlockedAt?: any;
@@ -18,6 +18,63 @@ interface AchievementWithState {
   unlocked: boolean;
   unlockedAt?: Date | null;
 }
+
+const AchievementCard: React.FC<{ item: AchievementWithState }> = ({ item: a }) => {
+  const [imageError, setImageError] = React.useState(false);
+
+  return (
+    <div
+      className={
+        'rounded-lg p-4 shadow-lg border transition-transform bg-xmas-card ' +
+        (a.unlocked ? 'border-xmas-gold hover:scale-[1.02]' : 'border-gray-700 opacity-70')
+      }
+    >
+      <div className="flex items-center mb-3">
+        <div className="relative mr-3 w-16 h-16 rounded-full overflow-hidden border border-xmas-gold/60 bg-gray-800 flex items-center justify-center">
+          {!imageError ? (
+            <img
+              src={`/achievements/${a.id}.png`}
+              alt={a.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <span className="text-3xl">{a.icon}</span>
+          )}
+        </div>
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            {a.name}
+            {a.unlocked && (
+              <span className="badge badge-success badge-sm">Unlocked</span>
+            )}
+          </h2>
+          {a.unlocked && a.unlockedAt && (
+            <p className="text-xs text-xmas-text/70 mt-1">
+              Unlocked on{' '}
+              {a.unlockedAt.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <p className="text-sm text-xmas-text mb-3">
+        {a.unlocked ? a.description : a.hint}
+      </p>
+
+      {!a.unlocked && (
+        <p className="text-xs text-xmas-text/60 italic">
+          Locked – keep watching to reveal this badge.
+        </p>
+      )}
+    </div>
+  );
+};
 
 const AchievementsPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -61,10 +118,22 @@ const AchievementsPage: React.FC = () => {
             unlockedAt: unlocked?.unlockedAt ?? null,
           };
         }).sort((a, b) => {
-          if (a.unlocked === b.unlocked) {
-            return a.name.localeCompare(b.name);
+          // Unlocked achievements first
+          if (a.unlocked !== b.unlocked) {
+            return a.unlocked ? -1 : 1;
           }
-          return a.unlocked ? -1 : 1;
+
+          // If both are unlocked and have dates, sort by unlockedAt (most recent first)
+          if (a.unlocked && b.unlocked) {
+            const aTime = a.unlockedAt ? a.unlockedAt.getTime() : 0;
+            const bTime = b.unlockedAt ? b.unlockedAt.getTime() : 0;
+            if (aTime !== bTime) {
+              return bTime - aTime;
+            }
+          }
+
+          // Fallback: alphabetical by name
+          return a.name.localeCompare(b.name);
         });
 
         setItems(merged);
@@ -103,56 +172,9 @@ const AchievementsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
         {items.map((a) => (
-          <div
-            key={a.id}
-            className={
-              'rounded-lg p-4 shadow-lg border transition-transform bg-xmas-card ' +
-              (a.unlocked
-                ? 'border-xmas-gold hover:scale-[1.02]'
-                : 'border-gray-700 opacity-70')
-            }
-          >
-            <div className="flex items-center mb-3">
-              <div
-                className={
-                  'text-3xl mr-3 flex items-center justify-center w-12 h-12 rounded-full ' +
-                  (a.unlocked ? 'bg-xmas-gold/20' : 'bg-gray-700')
-                }
-              >
-                <span>{a.icon}</span>
-              </div>
-              <div>
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  {a.name}
-                  {a.unlocked && (
-                    <span className="badge badge-success badge-sm">Unlocked</span>
-                  )}
-                </h2>
-                {a.unlocked && a.unlockedAt && (
-                  <p className="text-xs text-xmas-text/70 mt-1">
-                    Unlocked on{' '}
-                    {a.unlockedAt.toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <p className="text-sm text-xmas-text mb-3">
-              {a.unlocked ? a.description : a.hint}
-            </p>
-
-            {!a.unlocked && (
-              <p className="text-xs text-xmas-text/60 italic">
-                Locked – keep watching to reveal this badge.
-              </p>
-            )}
-          </div>
+          <AchievementCard key={a.id} item={a} />
         ))}
       </div>
     </div>

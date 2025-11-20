@@ -9,7 +9,7 @@ const LoginPage: React.FC = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (currentUser && !isLoading) {
-      navigate('/movies');
+      navigate('/');
     }
   }, [currentUser, isLoading, navigate]);
 

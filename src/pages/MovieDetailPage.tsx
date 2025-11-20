@@ -8,12 +8,15 @@ import { Movie, UserMovie } from '../types/movie';
 import { getUserMovie, saveUserMovie, deleteUserMovie } from '../utils/userMovieUtils';
 import { bumpWatchedTotal } from '../utils/stats';
 import VibeReview from '../components/VibeReview'; // ⭐ NEW
+import { ACHIEVEMENTS, checkAndUnlockAchievements } from '../utils/achievements';
+import { useToast } from '../ui/ToastProvider';
 
 const MovieDetailPage: React.FC = () => {
   const { movieId: slugParam } = useParams<{ movieId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const toast = useToast();
   
   // Get the actual movie ID from the URL query parameter
   const movieId = getMovieIdFromUrl(location.search);
@@ -152,6 +155,13 @@ const MovieDetailPage: React.FC = () => {
       // Use the utility function to save the user movie
       const updatedUserMovie = await saveUserMovie(currentUser.uid, movieId, userData);
       setUserMovie(updatedUserMovie);
+      const newlyUnlocked = await checkAndUnlockAchievements(currentUser.uid);
+      if (newlyUnlocked.length) {
+        const names = newlyUnlocked
+          .map(id => ACHIEVEMENTS.find(a => a.id === id)?.name || id)
+          .join(', ');
+        toast.success(`You unlocked: ${names}! 🎉`);
+      }
       
     } catch (err) {
       console.error('Error saving movie data:', err);
@@ -194,6 +204,14 @@ const MovieDetailPage: React.FC = () => {
 
       // reflect in local userMovie so the page shows current state
       setUserMovie((u) => (u ? { ...u, favorite: next } : u));
+
+      const newlyUnlocked = await checkAndUnlockAchievements(currentUser.uid);
+      if (newlyUnlocked.length) {
+        const names = newlyUnlocked
+          .map(id => ACHIEVEMENTS.find(a => a.id === id)?.name || id)
+          .join(', ');
+        toast.success(`You unlocked: ${names}! 🎉`);
+      }
     } catch (err) {
       console.error('Failed to toggle favorite', err);
       // revert on error
@@ -257,6 +275,14 @@ const MovieDetailPage: React.FC = () => {
       // bump global stats only if the value actually changed
       if (prev !== next) {
         await bumpWatchedTotal(next ? 1 : -1);
+      }
+
+      const newlyUnlocked = await checkAndUnlockAchievements(currentUser.uid);
+      if (newlyUnlocked.length) {
+        const names = newlyUnlocked
+          .map(id => ACHIEVEMENTS.find(a => a.id === id)?.name || id)
+          .join(', ');
+        toast.success(`You unlocked: ${names}! 🎉`);
       }
 
     } catch (err) {
