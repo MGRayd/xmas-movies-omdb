@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { getMovieIdFromUrl } from '../utils/urlUtils';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -38,6 +38,8 @@ const MovieDetailPage: React.FC = () => {
   const [review, setReview] = useState('');
   const [favorite, setFavorite] = useState(false);
   const [vibeTags, setVibeTags] = useState<string[]>([]); // ⭐ NEW
+
+  const reviewSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const fetchMovieData = async () => {
@@ -112,6 +114,14 @@ const MovieDetailPage: React.FC = () => {
 
     fetchMovieData();
   }, [currentUser, movieId]);
+
+  useEffect(() => {
+    if (watched && reviewSectionRef.current && typeof window !== 'undefined') {
+      if (window.innerWidth < 768) {
+        reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [watched]);
 
   const handleSave = async () => {
     if (!currentUser || !movieId || !movie) return;
@@ -452,26 +462,28 @@ const MovieDetailPage: React.FC = () => {
             </div>
           )}
           
-          <div className="divider"></div>
+          <div ref={reviewSectionRef}>
+            <div className="divider"></div>
 
-          {watched && (
-            <UserRatingReview
-              watched={watched}
-              watchedDate={watchedDate}
-              onWatchedDateChange={setWatchedDate}
-              rating={rating}
-              onRatingChange={setRating}
-              review={review}
-              onReviewChange={setReview}
-              vibeTags={vibeTags}
-              onVibeChange={({ tags, autoReview }) => {
-                setVibeTags(tags);
-                setReview(autoReview);
-              }}
-              saving={saving}
-              onSave={handleSave}
-            />
-          )}
+            {watched && (
+              <UserRatingReview
+                watched={watched}
+                watchedDate={watchedDate}
+                onWatchedDateChange={setWatchedDate}
+                rating={rating}
+                onRatingChange={setRating}
+                review={review}
+                onReviewChange={setReview}
+                vibeTags={vibeTags}
+                onVibeChange={({ tags, autoReview }) => {
+                  setVibeTags(tags);
+                  setReview(autoReview);
+                }}
+                saving={saving}
+                onSave={handleSave}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
