@@ -69,7 +69,6 @@ const MovieRequestButton: React.FC = () => {
         year: year.trim() || null,
         notes: notes.trim() || null,
         userId: currentUser.uid,
-        userEmail: currentUser.email || null,
         userDisplayName: userProfile?.displayName || currentUser.displayName || null,
         status: 'pending',
         createdAt: new Date(),
