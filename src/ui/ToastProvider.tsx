@@ -25,20 +25,30 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastCtx.Provider value={value}>
       {children}
       {/* viewport */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 space-y-2">
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`alert shadow-lg max-w-sm ${
-              t.kind === "success" ? "alert-success" :
-              t.kind === "error" ? "alert-error" : "alert-info"
-            }`}
+            className={`alert shadow-lg max-w-sm border-2 rounded-xl bg-gradient-to-r ${
+              t.kind === "success"
+                ? "from-green-700/90 to-emerald-600/90 border-green-300"
+                : t.kind === "error"
+                ? "from-red-800/90 to-rose-700/90 border-red-300"
+                : "from-sky-700/90 to-cyan-600/90 border-sky-300"
+            } text-white`}
           >
-            <div>
-              {t.kind === "success" ? "✅" : t.kind === "error" ? "⚠️" : "ℹ️"}
-              <span className="ml-2">{t.message}</span>
+            <div className="flex items-center">
+              <span className="text-lg mr-2">
+                {t.kind === "success" ? "🎄" : t.kind === "error" ? "🎁" : "❄️"}
+              </span>
+              <span className="ml-1">{t.message}</span>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => remove(t.id)}>✕</button>
+            <button
+              className="btn btn-ghost btn-xs text-white/80 hover:text-white"
+              onClick={() => remove(t.id)}
+            >
+              ✕
+            </button>
           </div>
         ))}
       </div>

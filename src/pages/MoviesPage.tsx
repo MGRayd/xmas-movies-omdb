@@ -114,8 +114,10 @@ const MoviesPage: React.FC = () => {
       const origin = window.location.origin;
       const url = `${origin}/u/${publicWatchlistSlug}`;
       await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard');
     } catch (err) {
       console.error('Failed to copy link', err);
+      toast.error('Failed to copy link');
     }
   };
   
@@ -306,7 +308,7 @@ useEffect(() => {
           </Link>
           <button
             type="button"
-            className="btn btn-outline btn-sm sm:btn-md"
+            className="btn btn-primary btn-sm sm:btn-md"
             onClick={() => setShowShareModal(true)}
           >
             <i className="fas fa-share-alt mr-1 sm:mr-2"></i>
