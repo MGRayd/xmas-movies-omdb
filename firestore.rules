@@ -74,6 +74,15 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         (resource.data.userId == request.auth.uid || isAdmin());
     }
+    
+    // Watchmode streaming cache - safe, derived data only
+    match /watchmodeSources/{movieId} {
+      // Anyone can read cached streaming availability
+      allow read: if true;
+
+      // Allow client-side writes so public pages can populate/refresh cache
+      allow write: if true;
+    }
 	
 	// Global stats document (for aggregate counters like watchedTotal)
     match /stats/global {

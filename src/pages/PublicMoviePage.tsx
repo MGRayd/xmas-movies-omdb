@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Movie, UserMovie } from '../types/movie';
+import WatchProviders from '../components/WatchProviders';
 
 const PublicMoviePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -297,6 +298,8 @@ const PublicMoviePage: React.FC = () => {
               </p>
             </div>
           )}
+
+          <WatchProviders movie={movie} />
         </div>
       </div>
     </div>
