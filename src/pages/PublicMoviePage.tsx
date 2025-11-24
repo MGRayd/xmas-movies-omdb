@@ -2,14 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Movie, User, UserMovie } from '../types/movie';
+import { Movie, UserMovie } from '../types/movie';
 
 const PublicMoviePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [owner, setOwner] = useState<User | null>(null);
+  const [owner, setOwner] = useState<any | null>(null);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [userMovie, setUserMovie] = useState<UserMovie | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,8 +24,8 @@ const PublicMoviePage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Find the user by slug with a public watchlist
-        const usersRef = collection(db, 'users');
+        // Find the public profile by slug
+        const usersRef = collection(db, 'publicProfiles');
         const uq = query(
           usersRef,
           where('publicWatchlistSlug', '==', slug),
@@ -40,8 +40,10 @@ const PublicMoviePage: React.FC = () => {
         }
 
         const userDoc = snapshot.docs[0];
-        const userData = { id: userDoc.id, ...userDoc.data() } as User;
+        const userData = { id: userDoc.id, ...userDoc.data() } as any;
         setOwner(userData);
+
+        const ownerUserId = userData.userId as string;
 
         // Load movie details
         const movieRef = doc(db, 'movies', movieId);
@@ -55,7 +57,7 @@ const PublicMoviePage: React.FC = () => {
         setMovie(movieData);
 
         // Load this user's movie doc (rating / review / vibes)
-        const userMovieRef = doc(db, 'users', userDoc.id, 'movies', movieId);
+        const userMovieRef = doc(db, 'users', ownerUserId, 'movies', movieId);
         const userMovieSnap = await getDoc(userMovieRef);
         if (userMovieSnap.exists()) {
           setUserMovie({ id: userMovieSnap.id, ...(userMovieSnap.data() as any) } as UserMovie);

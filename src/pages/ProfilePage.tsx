@@ -16,11 +16,6 @@ const ProfilePage: React.FC = () => {
   const [showTmdbKey, setShowTmdbKey] = useState(false);
   
   const [tmdbApiKey, setTmdbApiKey] = useState('');
-  const [isPublicWatchlist, setIsPublicWatchlist] = useState(false);
-  const [publicWatchlistName, setPublicWatchlistName] = useState('');
-  const [publicWatchlistTagline, setPublicWatchlistTagline] = useState('');
-  const [publicWatchlistSlug, setPublicWatchlistSlug] = useState('');
-  const [sharingSaving, setSharingSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [migrationLoading, setMigrationLoading] = useState(false);
@@ -34,77 +29,9 @@ const ProfilePage: React.FC = () => {
     favoriteMovies: 0
   });
   
-  const slugify = (value: string) => {
-    return value
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
-
-  const handleGenerateSlugFromName = () => {
-    if (!publicWatchlistName) return;
-    const slug = slugify(publicWatchlistName);
-    setPublicWatchlistSlug(slug);
-  };
-
-  const handleSaveSharing = async () => {
-    if (!currentUser) return;
-
-    try {
-      setSharingSaving(true);
-      setError(null);
-
-      const userRef = doc(db, 'users', currentUser.uid);
-
-      const payload: any = {
-        isPublicWatchlist,
-        publicWatchlistName: publicWatchlistName || null,
-        publicWatchlistTagline: publicWatchlistTagline || null,
-        publicWatchlistSlug: publicWatchlistSlug || null,
-      };
-
-      // If making it public and no slug yet, generate one from name or displayName
-      if (isPublicWatchlist && !payload.publicWatchlistSlug) {
-        const baseName = publicWatchlistName || userProfile.displayName || 'xmas-watchlist';
-        payload.publicWatchlistSlug = slugify(baseName);
-        setPublicWatchlistSlug(payload.publicWatchlistSlug);
-      }
-
-      await updateDoc(userRef, payload);
-
-      setSuccess('Sharing settings saved!');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      console.error('Error saving sharing settings:', err);
-      setError(err.message || 'Failed to save sharing settings');
-    } finally {
-      setSharingSaving(false);
-    }
-  };
-
-  const handleCopyShareLink = async () => {
-    if (!publicWatchlistSlug) return;
-    try {
-      const origin = window.location.origin;
-      const url = `${origin}/u/${publicWatchlistSlug}`;
-      await navigator.clipboard.writeText(url);
-      setSuccess('Share link copied to clipboard!');
-      setTimeout(() => setSuccess(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy link', err);
-    }
-  };
-  
   useEffect(() => {
     if (userProfile?.tmdbApiKey) {
       setTmdbApiKey(userProfile.tmdbApiKey);
-    }
-    if (userProfile) {
-      setIsPublicWatchlist(!!userProfile.isPublicWatchlist);
-      setPublicWatchlistName(userProfile.publicWatchlistName || '');
-      setPublicWatchlistTagline(userProfile.publicWatchlistTagline || '');
-      setPublicWatchlistSlug(userProfile.publicWatchlistSlug || '');
     }
     
     const fetchUserStats = async () => {
@@ -412,105 +339,6 @@ const ProfilePage: React.FC = () => {
                   <i className="fas fa-trophy mr-2"></i>
                   Achievements
                 </Link>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-2">Public Watchlist / Sharing</h3>
-              <p className="text-sm mb-3">
-                Create a shareable page that shows your watched Christmas movies, ratings and vibes.
-              </p>
-
-              <div className="form-control mb-4">
-                <label className="label cursor-pointer">
-                  <span className="label-text">Make my watchlist public</span>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-primary"
-                    checked={isPublicWatchlist}
-                    onChange={(e) => setIsPublicWatchlist(e.target.checked)}
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Public display name</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input input-bordered input-sm sm:input-md"
-                    value={publicWatchlistName}
-                    onChange={(e) => setPublicWatchlistName(e.target.value)}
-                    placeholder="Sam's Xmas Watchlist"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Tagline / bio (optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input input-bordered input-sm sm:input-md"
-                    value={publicWatchlistTagline}
-                    onChange={(e) => setPublicWatchlistTagline(e.target.value)}
-                    placeholder="Only the coziest Xmas movies allowed 384"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Public URL slug</span>
-                  </label>
-                  <div className="flex flex-col sm:flex-row gap-2 items-stretch">
-                    <div className="flex items-center px-3 rounded-lg bg-base-200 text-sm whitespace-nowrap">
-                      /u/
-                    </div>
-                    <input
-                      type="text"
-                      className="input input-bordered input-sm sm:input-md flex-1"
-                      value={publicWatchlistSlug}
-                      onChange={(e) => setPublicWatchlistSlug(slugify(e.target.value))}
-                      placeholder="sams-xmas-watchlist"
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={handleGenerateSlugFromName}
-                    >
-                      Auto from name
-                    </button>
-                  </div>
-                  {publicWatchlistSlug && (
-                    <p className="mt-1 text-xs text-xmas-mute">
-                      Your public link: <span className="font-mono">/u/{publicWatchlistSlug}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={handleSaveSharing}
-                  disabled={sharingSaving}
-                >
-                  {sharingSaving && (
-                    <span className="loading loading-spinner loading-xs mr-1"></span>
-                  )}
-                  Save sharing settings
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  onClick={handleCopyShareLink}
-                  disabled={!publicWatchlistSlug}
-                >
-                  <i className="fas fa-link mr-2"></i>
-                  Copy share link
-                </button>
               </div>
             </div>
 

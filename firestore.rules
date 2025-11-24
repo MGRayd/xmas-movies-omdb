@@ -10,21 +10,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // User profiles
     match /users/{userId} {
-      // READ:
-      //  - owner (signed in)
-      //  - OR anyone if this user has a public watchlist
-      allow read: if
-        (request.auth != null && request.auth.uid == userId) ||
-        (resource.data.isPublicWatchlist == true);
-
-      // WRITE: only the owner
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Owner-only access to profile documents
+      allow read, write: if request.auth != null && request.auth.uid == userId;
       
       // User movies subcollection
       match /movies/{movieId} {
         // READ:
         //  - owner
-        //  - OR anyone if the owner has a public watchlist
+        //  - OR anyone if the owner has a public watchlist (checked via users doc)
         allow read: if
           (request.auth != null && request.auth.uid == userId) ||
           (
@@ -52,6 +45,16 @@ service cloud.firestore {
         ((request.auth.uid != null && exists(/databases/{database}/documents/userMovies/$(request.auth.uid + '_' + movieId))) || isAdmin());
       allow delete: if request.auth != null && 
         ((request.auth.uid != null && exists(/databases/{database}/documents/userMovies/$(request.auth.uid + '_' + movieId))) || isAdmin());
+    }
+
+    // Public profiles collection - safe, public-facing data only
+    match /publicProfiles/{slug} {
+      // Anyone can read public profiles
+      allow read: if true;
+
+      // Only the owner of the profile can write/update their own public profile
+      allow write: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
     }
     
     // UserMovies collection - users can only access their own data

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { createSlugFromTitle } from '../utils/urlUtils';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Movie, User, UserMovie } from '../types/movie';
+import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
 
 interface PublicStats {
@@ -14,7 +14,7 @@ interface PublicStats {
 
 const PublicWatchlistPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [profile, setProfile] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [userMovies, setUserMovies] = useState<{ [movieId: string]: UserMovie }>({});
   const [stats, setStats] = useState<PublicStats | null>(null);
@@ -29,7 +29,7 @@ const PublicWatchlistPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const usersRef = collection(db, 'users');
+        const usersRef = collection(db, 'publicProfiles');
         const q = query(
           usersRef,
           where('publicWatchlistSlug', '==', slug),
@@ -44,10 +44,12 @@ const PublicWatchlistPage: React.FC = () => {
         }
 
         const userDoc = snapshot.docs[0];
-        const userData = { id: userDoc.id, ...userDoc.data() } as User;
+        const userData = { id: userDoc.id, ...userDoc.data() } as any;
         setProfile(userData);
 
-        const { userMovies: userMoviesMap, movies: moviesData } = await getUserMoviesWithDetails(userDoc.id);
+        const ownerUserId = userData.userId as string;
+
+        const { userMovies: userMoviesMap, movies: moviesData } = await getUserMoviesWithDetails(ownerUserId);
 
         const watchedMovies = moviesData.filter((m) => {
           const um = userMoviesMap[m.id];

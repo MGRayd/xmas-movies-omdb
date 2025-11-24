@@ -4,9 +4,11 @@ import { createMovieUrl } from '../utils/urlUtils';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useToast } from '../ui/ToastProvider';
 
 type SortOption = 'title' | 'year' | 'rating' | 'watched' | 'added';
 type SearchField = 'title' | 'year' | 'cast' | 'all';
@@ -17,7 +19,8 @@ interface SortConfig {
 }
 
 const MoviesPage: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
+  const toast = useToast();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [userMovies, setUserMovies] = useState<{[movieId: string]: UserMovie}>({});
   const [loading, setLoading] = useState(true);
@@ -27,8 +30,94 @@ const MoviesPage: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ option: 'title', direction: 'asc' });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchField, setSearchField] = useState<SearchField>('all');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isPublicWatchlist, setIsPublicWatchlist] = useState(false);
+  const [publicWatchlistName, setPublicWatchlistName] = useState('');
+  const [publicWatchlistTagline, setPublicWatchlistTagline] = useState('');
+  const [publicWatchlistSlug, setPublicWatchlistSlug] = useState('');
+  const [sharingSaving, setSharingSaving] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const slugify = (value: string) => {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const handleGenerateSlugFromName = () => {
+    if (!publicWatchlistName) return;
+    const slug = slugify(publicWatchlistName);
+    setPublicWatchlistSlug(slug);
+  };
+
+  const handleSaveSharing = async () => {
+    if (!currentUser) return;
+
+    try {
+      setSharingSaving(true);
+
+      const userRef = doc(db, 'users', currentUser.uid);
+
+      const payload: any = {
+        isPublicWatchlist,
+        publicWatchlistName: publicWatchlistName || null,
+        publicWatchlistTagline: publicWatchlistTagline || null,
+        publicWatchlistSlug: publicWatchlistSlug || null,
+      };
+
+      if (isPublicWatchlist && !payload.publicWatchlistSlug) {
+        const baseName = publicWatchlistName || userProfile?.displayName || 'xmas-watchlist';
+        payload.publicWatchlistSlug = slugify(baseName);
+        setPublicWatchlistSlug(payload.publicWatchlistSlug);
+      }
+
+      await updateDoc(userRef, payload);
+
+      // Mirror safe public fields into publicProfiles collection
+      if (isPublicWatchlist && payload.publicWatchlistSlug) {
+        const publicRef = doc(db, 'publicProfiles', payload.publicWatchlistSlug);
+        await setDoc(publicRef, {
+          userId: currentUser.uid,
+          displayName: userProfile?.displayName || '',
+          photoURL: userProfile?.photoURL || null,
+          publicWatchlistName: payload.publicWatchlistName || null,
+          publicWatchlistTagline: payload.publicWatchlistTagline || null,
+          publicWatchlistSlug: payload.publicWatchlistSlug,
+          isPublicWatchlist: true,
+        }, { merge: true });
+      } else if (!isPublicWatchlist && publicWatchlistSlug) {
+        // Ensure any existing public profile is marked as non-public
+        const publicRef = doc(db, 'publicProfiles', publicWatchlistSlug);
+        await setDoc(publicRef, {
+          userId: currentUser.uid,
+          isPublicWatchlist: false,
+          publicWatchlistName: null,
+          publicWatchlistTagline: null,
+        }, { merge: true });
+      }
+
+      toast.success('Sharing settings saved');
+    } catch (err) {
+      console.error('Error saving sharing settings:', err);
+      toast.error('Failed to save sharing settings');
+    } finally {
+      setSharingSaving(false);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!publicWatchlistSlug) return;
+    try {
+      const origin = window.location.origin;
+      const url = `${origin}/u/${publicWatchlistSlug}`;
+      await navigator.clipboard.writeText(url);
+    } catch (err) {
+      console.error('Failed to copy link', err);
+    }
+  };
   
 useEffect(() => {
   const params = new URLSearchParams(location.search);
@@ -40,6 +129,21 @@ useEffect(() => {
   if (field !== searchField) setSearchField(field);
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [location.search]);
+
+  useEffect(() => {
+    if (!userProfile) return;
+    setIsPublicWatchlist(!!userProfile.isPublicWatchlist);
+    setPublicWatchlistName(userProfile.publicWatchlistName || '');
+    setPublicWatchlistTagline(userProfile.publicWatchlistTagline || '');
+    setPublicWatchlistSlug(userProfile.publicWatchlistSlug || '');
+  }, [userProfile]);
+
+  useEffect(() => {
+    if (!isPublicWatchlist) return;
+    if (!publicWatchlistName) return;
+    if (publicWatchlistSlug) return;
+    setPublicWatchlistSlug(slugify(publicWatchlistName));
+  }, [isPublicWatchlist, publicWatchlistName, publicWatchlistSlug]);
 
   // No pagination - show all movies at once
   useEffect(() => {
@@ -200,6 +304,15 @@ useEffect(() => {
           <Link to="/import" className="btn btn-primary btn-sm sm:btn-md">
             <i className="fas fa-file-import mr-1 sm:mr-2"></i> <span className="hidden xs:inline">Add Movies</span><span className="xs:hidden">Import</span>
           </Link>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm sm:btn-md"
+            onClick={() => setShowShareModal(true)}
+          >
+            <i className="fas fa-share-alt mr-1 sm:mr-2"></i>
+            <span className="hidden xs:inline">Share</span>
+            <span className="xs:hidden">Share</span>
+          </button>
         </div>
       </div>
       
@@ -420,6 +533,97 @@ useEffect(() => {
             );
           })}
         </div>
+      )}
+      
+      {showShareModal && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <h3 className="font-bold text-lg mb-2">Share your watchlist</h3>
+            <p className="text-sm mb-4">
+              Create a shareable page that shows your watched Christmas movies, ratings and vibes.
+            </p>
+
+            <div className="form-control mb-4">
+              <label className="label cursor-pointer">
+                <span className="label-text">Make my watchlist public</span>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary"
+                  checked={isPublicWatchlist}
+                  onChange={(e) => setIsPublicWatchlist(e.target.checked)}
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Public display name</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered input-sm sm:input-md"
+                  value={publicWatchlistName}
+                  onChange={(e) => setPublicWatchlistName(e.target.value)}
+                  placeholder="My Xmas Movies"
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Tagline / bio (optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered input-sm sm:input-md"
+                  value={publicWatchlistTagline}
+                  onChange={(e) => setPublicWatchlistTagline(e.target.value)}
+                  placeholder="Only the coziest Xmas movies allowed"
+                />
+              </div>
+
+              {publicWatchlistSlug && (
+                <div className="mt-1 text-xs text-xmas-mute">
+                  Your public link: <span className="font-mono">/u/{publicWatchlistSlug}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-action flex flex-wrap gap-2 justify-between">
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSaveSharing}
+                  disabled={sharingSaving}
+                >
+                  {sharingSaving && (
+                    <span className="loading loading-spinner loading-xs mr-1"></span>
+                  )}
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={handleCopyShareLink}
+                  disabled={!publicWatchlistSlug}
+                >
+                  <i className="fas fa-link mr-2"></i>
+                  Copy link
+                </button>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowShareModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop" onClick={() => setShowShareModal(false)}>
+            <button>close</button>
+          </form>
+        </dialog>
       )}
       
       {/* No pagination - all movies shown at once */}
