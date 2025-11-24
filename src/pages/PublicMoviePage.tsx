@@ -134,12 +134,13 @@ const PublicMoviePage: React.FC = () => {
             </div>
           )}
           <div className="text-sm">
-            <div className="font-semibold">{displayName}</div>
+            <div className="font-semibold mb-1">{displayName}</div>
             <button
-              className="link link-primary text-xs"
+              className="btn btn-primary btn-sm px-4 py-2 rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border border-xmas-gold border-opacity-30 flex items-center gap-2"
               onClick={() => navigate(`/u/${slug}`)}
             >
-              ← Back to watchlist
+              <i className="fas fa-arrow-left"></i>
+              <span>Back to watchlist</span>
             </button>
           </div>
         </div>

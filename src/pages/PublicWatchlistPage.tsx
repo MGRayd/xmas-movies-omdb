@@ -239,18 +239,6 @@ const PublicWatchlistPage: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    {userMovie && userMovie.vibeTags && userMovie.vibeTags.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        {userMovie.vibeTags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="badge badge-sm bg-xmas-gold bg-opacity-20 text-[0.7rem] border-xmas-gold"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               </Link>

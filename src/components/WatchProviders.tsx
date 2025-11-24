@@ -11,6 +11,7 @@ interface Props {
 const WatchProviders: React.FC<Props> = ({ movie }) => {
   const { loading, error, data } = useWatchmodeSources(movie);
   const [metaMap, setMetaMap] = useState<WatchmodeSourceMetaMap | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,7 +32,7 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
 
   if (loading && !data) {
     return (
-      <div className="mt-6 text-sm text-xmas-mute">Looking up where to watch in the UK…</div>
+      <div className="mt-6 text-sm text-xmas-mute">Looking up where to watch…</div>
     );
   }
 
@@ -41,19 +42,6 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
 
   const sources = data?.sources || [];
 
-  if (!sources.length) {
-    return (
-      <div className="mt-6">
-        <div className="divider"></div>
-        <h2 className="text-xl font-bold mb-2">Where to watch in the UK</h2>
-        <p className="text-xs text-xmas-mute">
-          We couldn&apos;t find any current UK streaming options via Watchmode for this title.
-        </p>
-      </div>
-    );
-  }
-
-  // Group by region then by type (subscription vs purchase/rent)
   const regionsOrder = ['GB', 'US', 'CA'];
 
   const sourcesByRegion: Record<string, typeof sources> = {};
@@ -71,14 +59,8 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
     return Array.from(map.values());
   };
 
-  return (
-    <div className="mt-6">
-      <div className="divider"></div>
-      <h2 className="text-xl font-bold mb-2">Where to watch</h2>
-      <p className="text-xs text-xmas-mute mb-3">
-        Powered by Watchmode. Availability can change, so please double-check on the provider&apos;s site.
-      </p>
-
+  const renderRegionGrid = () => (
+    <div className="grid gap-4 sm:gap-5 md:grid-cols-3">
       {regionsOrder.map((region) => {
         const list = sourcesByRegion[region];
         if (!list || !list.length) return null;
@@ -94,11 +76,14 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
         const regionLabel = region === 'GB' ? 'UK' : region;
 
         return (
-          <div key={region} className="mb-4">
-            <h3 className="text-sm font-semibold mb-2">{regionLabel}</h3>
+          <div
+            key={region}
+            className="bg-black/10 rounded-md p-3 sm:p-4 flex flex-col gap-3"
+          >
+            <h3 className="text-sm font-semibold mb-1">{regionLabel}</h3>
 
             {free.length > 0 && (
-              <div className="mb-2">
+              <div>
                 <div className="text-xs uppercase tracking-wide text-xmas-mute mb-1">Free</div>
                 <div className="flex flex-wrap gap-3">
                   {uniqueByName(free).map((s) => {
@@ -126,7 +111,7 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
             )}
 
             {subscription.length > 0 && (
-              <div className="mb-2">
+              <div>
                 <div className="text-xs uppercase tracking-wide text-xmas-mute mb-1">Streaming</div>
                 <div className="flex flex-wrap gap-3">
                   {uniqueByName(subscription).map((s) => {
@@ -154,7 +139,7 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
             )}
 
             {purchaseOrRent.length > 0 && (
-              <div className="mb-1">
+              <div>
                 <div className="text-xs uppercase tracking-wide text-xmas-mute mb-1">Buy / Rent</div>
                 <div className="flex flex-wrap gap-3">
                   {uniqueByName(purchaseOrRent).map((s) => {
@@ -185,6 +170,75 @@ const WatchProviders: React.FC<Props> = ({ movie }) => {
       })}
     </div>
   );
-}
+
+  // No sources: still show the card so users know the section exists
+  if (!sources.length) {
+    return (
+      <div className="mt-6">
+        <div className="divider"></div>
+        <div className="bg-xmas-card/40 border border-xmas-gold/40 rounded-lg overflow-hidden">
+          <button
+            type="button"
+            className="w-full flex items-center justify-between text-left px-4 py-3 sm:px-5 sm:py-4 bg-xmas-card/60 hover:bg-xmas-card transition-colors cursor-pointer"
+            onClick={() => setIsOpen((v) => !v)}
+          >
+            <div className="flex items-center gap-3">
+              <i className="fas fa-tv text-xmas-gold"></i>
+              <h2 className="text-lg sm:text-xl font-bold flex-1">Where to watch</h2>
+            </div>
+            <span
+              className={`ml-3 text-sm text-xmas-mute transition-transform duration-200 ${
+                isOpen ? 'rotate-180' : 'rotate-0'
+              }`}
+            >
+              <i className="fas fa-chevron-down"></i>
+            </span>
+          </button>
+          {isOpen && (
+            <div className="px-4 py-3 sm:px-5 sm:py-5 text-xs text-xmas-mute">
+              <p className="mb-2">
+                Powered by Watchmode. Availability can change, so please double-check on the provider's site.
+              </p>
+              <p>We couldn't find any current streaming options via Watchmode for this title.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <div className="divider"></div>
+      <div className="bg-xmas-card/40 border border-xmas-gold/40 rounded-lg overflow-hidden">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between text-left px-4 py-3 sm:px-5 sm:py-4 bg-xmas-card/60 hover:bg-xmas-card transition-colors cursor-pointer"
+          onClick={() => setIsOpen((v) => !v)}
+        >
+          <div className="flex items-center gap-3">
+            <i className="fas fa-tv text-xmas-gold"></i>
+            <h2 className="text-lg sm:text-xl font-bold flex-1">Where to watch</h2>
+          </div>
+          <span
+            className={`ml-3 text-sm text-xmas-mute transition-transform duration-200 ${
+              isOpen ? 'rotate-180' : 'rotate-0'
+            }`}
+          >
+            <i className="fas fa-chevron-down"></i>
+          </span>
+        </button>
+        {isOpen && (
+          <div className="px-4 py-3 sm:px-5 sm:py-5">
+            <p className="text-xs text-xmas-mute mb-4">
+              Powered by Watchmode. Availability can change, so please double-check on the provider's site.
+            </p>
+            {renderRegionGrid()}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default WatchProviders;
