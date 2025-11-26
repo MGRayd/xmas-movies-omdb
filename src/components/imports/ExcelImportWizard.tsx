@@ -19,17 +19,18 @@ type Match = {
 };
 
 type Props = {
-  tmdbApiKey: string; // now OMDb key; prop name retained
+  omdbApiKey: string; // OMDb key
   userId: string;
   onDone?: () => void;
 };
 
-const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
+const ExcelImportWizard: React.FC<Props> = ({ omdbApiKey, userId, onDone }) => {
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<ExcelMovieImport[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [step, setStep] = useState<'upload'|'review'|'import'>('upload');
   const [scanPct, setScanPct] = useState(0);
+  const [scanLabel, setScanLabel] = useState<string | null>(null);
   const [importPct, setImportPct] = useState(0);
   const [loading, setLoading] = useState(false);
   const [manualIndex, setManualIndex] = useState<number | null>(null);
@@ -63,27 +64,49 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
   };
 
   const scan = async () => {
-    if (!rows.length || !tmdbApiKey) { setError('Missing data or OMDb key'); return; }
+    if (!rows.length || !omdbApiKey) { setError('Missing data or OMDb key'); return; }
     try {
-      setLoading(true); setError(null); setMatches([]); setScanPct(0);
+      setLoading(true); setError(null); setMatches([]); setScanPct(0); setScanLabel(null);
       const out: Match[] = [];
       const moviesRef = collection(db, 'movies');
 
       for (let i=0;i<rows.length;i++){
         const r = rows[i];
+        setScanLabel(r.title || null);
         try{
           // If an explicit IMDb id is provided, use it directly.
           let details: OmdbMovie | null = null;
           if (r.imdbId) {
-            details = await getMovieDetailsOmdb(r.imdbId, tmdbApiKey);
+            details = await getMovieDetailsOmdb(r.imdbId, omdbApiKey);
           } else {
-            const sq = `${r.title} ${r.releaseDate || ''}`.trim();
-            const res = await searchMoviesOmdb(sq, tmdbApiKey);
+            // Prefer title + year/release when present, but fall back to title-only
+            // if OMDb returns no results (or an error) for the combined query.
+            const combined = `${r.title} ${r.releaseDate || ''}`.trim();
+            let searchTerm = combined || r.title;
+            let res: OmdbMovie[] = [];
+
+            try {
+              res = await searchMoviesOmdb(searchTerm, omdbApiKey);
+            } catch {
+              res = [];
+            }
+
+            // If we searched with title+year and got nothing, retry with title only.
+            if (!res.length && combined && r.title && combined !== r.title) {
+              searchTerm = r.title;
+              try {
+                res = await searchMoviesOmdb(searchTerm, omdbApiKey);
+              } catch {
+                res = [];
+              }
+            }
+
             if (!res.length) {
               out.push({ excelData:r, tmdbMatch:null, confidence:0, status:'unmatched', userMovieExists:false, selected:false });
               continue;
             }
-            details = await getMovieDetailsOmdb(res[0].imdbID, tmdbApiKey);
+
+            details = await getMovieDetailsOmdb(res[0].imdbID, omdbApiKey);
           }
 
           if (!details) {
@@ -119,6 +142,7 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
       setStep('review');
     } finally {
       setLoading(false);
+      setScanLabel(null);
     }
   };
 
@@ -127,7 +151,7 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
     setLoading(true);
     const current = matches[idx];
     const term = text || current.excelData.title;
-    const res = await searchMoviesOmdb(term, tmdbApiKey);
+    const res = await searchMoviesOmdb(term, omdbApiKey);
     setManualIndex(idx);
     setManualResults(res);
   } finally {
@@ -139,7 +163,7 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
   if (manualIndex == null) return;
   setLoading(true);
   try {
-    const details = await getMovieDetailsOmdb(tmdb.imdbID, tmdbApiKey);
+    const details = await getMovieDetailsOmdb(tmdb.imdbID, omdbApiKey);
     const conf = calculateConfidence(matches[manualIndex].excelData, details);
 
     const moviesRef = collection(db, 'movies');
@@ -204,9 +228,18 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
         <div className="space-y-4">
           <input type="file" accept=".xlsx,.xls" className="file-input file-input-bordered w-full" onChange={onUpload}/>
           {!!rows.length && <div className="text-sm opacity-80">{rows.length} rows detected</div>}
-          <button className="btn btn-primary" onClick={scan} disabled={!tmdbApiKey || !rows.length || loading}>
+          <button className="btn btn-primary" onClick={scan} disabled={!omdbApiKey || !rows.length || loading}>
             {loading ? <span className="loading loading-spinner loading-sm"/> : 'Scan & Match'}
           </button>
+          {loading && !!scanPct && scanPct < 100 && (
+            <div className="space-y-1">
+              <div className="text-sm">Scanning {scanPct}%</div>
+              <progress className="progress w-full" value={scanPct} max={100} />
+              {scanLabel && (
+                <div className="text-xs opacity-70 truncate">Current: {scanLabel}</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

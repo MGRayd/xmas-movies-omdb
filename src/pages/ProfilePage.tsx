@@ -15,7 +15,7 @@ const ProfilePage: React.FC = () => {
   const { isAdmin } = useIsAdmin();
   const [showTmdbKey, setShowTmdbKey] = useState(false);
   
-  const [tmdbApiKey, setTmdbApiKey] = useState('');
+  const [omdbApiKey, setOmdbApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [migrationLoading, setMigrationLoading] = useState(false);
@@ -31,7 +31,7 @@ const ProfilePage: React.FC = () => {
   
   useEffect(() => {
     if (userProfile?.omdbApiKey) {
-      setTmdbApiKey(userProfile.omdbApiKey);
+      setOmdbApiKey(userProfile.omdbApiKey);
     }
     
     const fetchUserStats = async () => {
@@ -76,7 +76,7 @@ const ProfilePage: React.FC = () => {
       setError(null);
       
       const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, { omdbApiKey: tmdbApiKey });
+      await updateDoc(userRef, { omdbApiKey: omdbApiKey });
       
       setSuccess('OMDb API key saved successfully!');
       
@@ -275,8 +275,8 @@ const ProfilePage: React.FC = () => {
                       <input
                         type={showTmdbKey ? "text" : "password"}
                         className="input input-bordered flex-1 h-12 text-lg"
-                        value={tmdbApiKey}
-                        onChange={(e) => setTmdbApiKey(e.target.value)}
+                        value={omdbApiKey}
+                        onChange={(e) => setOmdbApiKey(e.target.value)}
                         placeholder="Enter your OMDb API key"
                         style={{ letterSpacing: showTmdbKey ? "normal" : "3px" }} // makes masking nicer
                       />

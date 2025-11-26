@@ -19,7 +19,7 @@ const MovieImportPage: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
   const { isAdmin } = useIsAdmin();
 
-  const [tmdbApiKey, setTmdbApiKey] = useState('');
+  const [omdbApiKey, setOmdbApiKey] = useState('');
   const [active, setActive] = useState<'local' | 'tmdb' | 'excel'>('local');
   const [selected, setSelected] = useState<any | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -32,9 +32,9 @@ const MovieImportPage: React.FC = () => {
   useEffect(() => {
     // Only bother with OMDb key for admins
     if (isAdmin && userProfile?.omdbApiKey) {
-      setTmdbApiKey(userProfile.omdbApiKey);
+      setOmdbApiKey(userProfile.omdbApiKey);
     } else {
-      setTmdbApiKey('');
+      setOmdbApiKey('');
     }
   }, [userProfile, isAdmin]);
 
@@ -70,7 +70,7 @@ const MovieImportPage: React.FC = () => {
       setMsg({ type: 'error', text: 'Only admins can import directly from OMDb.' });
       return;
     }
-    if (!tmdbApiKey) {
+    if (!omdbApiKey) {
       setMsg({ type: 'error', text: 'OMDb key required to fetch details.' });
       return;
     }
@@ -78,7 +78,7 @@ const MovieImportPage: React.FC = () => {
       setLoading(true);
       setMsg(null);
       setShowDetails(false);
-      const details = await getMovieDetailsOmdb(movieLike.imdbID, tmdbApiKey);
+      const details = await getMovieDetailsOmdb(movieLike.imdbID, omdbApiKey);
       setSelected(details); // opens modal with full OMDb details
     } catch (e: any) {
       setMsg({ type: 'error', text: e?.message ?? 'Failed to fetch details' });
@@ -231,19 +231,19 @@ const MovieImportPage: React.FC = () => {
 
       {active === 'tmdb' && isAdmin && (
         <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-          {!tmdbApiKey && (
+          {!omdbApiKey && (
             <div className="alert alert-warning mb-4">
               <i className="fas fa-exclamation-triangle mr-2" />
               <span>Set your OMDb API key in Profile to search OMDb.</span>
             </div>
           )}
-          <TmdbSearchPanel tmdbApiKey={tmdbApiKey} onSelect={onSelectTmdb} />
+          <TmdbSearchPanel omdbApiKey={omdbApiKey} onSelect={onSelectTmdb} />
         </div>
       )}
 
       {active === 'excel' && isAdmin && (
         <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-          {!tmdbApiKey && (
+          {!omdbApiKey && (
             <div className="alert alert-warning mb-4">
               <i className="fas fa-exclamation-triangle mr-2" />
               <span>OMDb key required for matching.</span>
@@ -251,7 +251,7 @@ const MovieImportPage: React.FC = () => {
           )}
           {currentUser ? (
             <ExcelImportWizard
-              tmdbApiKey={tmdbApiKey}
+              omdbApiKey={omdbApiKey}
               userId={currentUser.uid}
               onDone={() => setActive('local')}
             />

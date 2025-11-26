@@ -6,6 +6,7 @@ import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useAuth } from '../contexts/AuthContext';
 import { updateMoviesWithSortTitles } from '../utils/migrationUtils';
 import { upsertMoviesByImdbIds } from '../utils/catalogueImportUtils';
+import ExcelCatalogueImportWizard from '../components/imports/ExcelCatalogueImportWizard';
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const AdminDashboardPage: React.FC = () => {
   const [requestsLoading, setRequestsLoading] = useState(false);
 
   // NEW: Catalogue Builder state (OMDb / IMDb)
-  const [tmdbApiKey, setTmdbApiKey] = useState<string>('');
+  const [omdbApiKey, setOmdbApiKey] = useState<string>('');
   const [rawIds, setRawIds] = useState<string>('');
   const [slowMode, setSlowMode] = useState<boolean>(true);
   const [importing, setImporting] = useState(false);
@@ -34,7 +35,7 @@ const AdminDashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (userProfile?.omdbApiKey) {
-      setTmdbApiKey(userProfile.omdbApiKey);
+      setOmdbApiKey(userProfile.omdbApiKey);
     }
   }, [userProfile]);
 
@@ -167,7 +168,7 @@ const AdminDashboardPage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    if (!tmdbApiKey) {
+    if (!omdbApiKey) {
       setError('OMDb API key required');
       return;
     }
@@ -183,7 +184,7 @@ const AdminDashboardPage: React.FC = () => {
 
       const summary = await upsertMoviesByImdbIds(
         parsedIds,
-        tmdbApiKey,
+        omdbApiKey,
         (i, total, last) => {
           const pct = Math.round((i / total) * 100);
           setProgressPct(pct);
@@ -320,8 +321,8 @@ tt0107688`}
                 <button
                   className="btn btn-primary ml-auto"
                   onClick={handleCatalogueImport}
-                  disabled={importing || parsedIds.length === 0 || !tmdbApiKey}
-                  title={!tmdbApiKey ? 'Add your OMDb API key in Profile > Settings' : undefined}
+                  disabled={importing || parsedIds.length === 0 || !omdbApiKey}
+                  title={!omdbApiKey ? 'Add your OMDb API key in Profile > Settings' : undefined}
                 >
                   {importing ? (
                     <>
@@ -344,6 +345,36 @@ tt0107688`}
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* NEW: Excel Catalogue Import */}
+        <div className="card bg-xmas-card shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title font-christmas">
+              <i className="fas fa-file-excel text-primary mr-2"></i> Excel Catalogue Import
+            </h2>
+            <p className="mb-4 text-sm opacity-80">
+              Use an Excel file (title / year / optional IMDb id) to populate or refresh the main
+              <code className="mx-1">movies</code> catalogue via OMDb.
+            </p>
+
+            {!omdbApiKey && (
+              <div className="alert alert-warning mb-4">
+                <i className="fas fa-exclamation-triangle mr-2" />
+                <span>Add your OMDb API key in Profile to enable Excel catalogue import.</span>
+              </div>
+            )}
+
+            {omdbApiKey && (
+              <ExcelCatalogueImportWizard
+                omdbApiKey={omdbApiKey}
+                onDone={() => {
+                  setSuccess('Excel catalogue import completed.');
+                  setTimeout(() => setSuccess(null), 4000);
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

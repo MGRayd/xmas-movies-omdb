@@ -17,11 +17,15 @@ export function calculateConfidence(excelMovie: ExcelMovieImport, omdbMovie: Omd
     }
   }
 
-  if (excelMovie.releaseDate && omdbMovie.Year) {
-    const a = excelMovie.releaseDate.slice(0, 4);
-    const b = omdbMovie.Year.slice(0, 4);
-    if (a === b) confidence += 40;
-    else if (Math.abs(parseInt(a) - parseInt(b)) <= 1) confidence += 20;
+  if (excelMovie.releaseDate != null && omdbMovie.Year) {
+    const aStr = String(excelMovie.releaseDate).slice(0, 4);
+    const bStr = String(omdbMovie.Year).slice(0, 4);
+    const aNum = parseInt(aStr, 10);
+    const bNum = parseInt(bStr, 10);
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      if (aNum === bNum) confidence += 40;
+      else if (Math.abs(aNum - bNum) <= 1) confidence += 20;
+    }
   }
 
   return Math.min(Math.round(confidence), 100);
