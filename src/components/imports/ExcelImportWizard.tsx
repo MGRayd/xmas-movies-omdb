@@ -47,8 +47,12 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<any>(sheet);
       const movies: ExcelMovieImport[] = json.map(r => ({
+        // Required title column (case-insensitive variants supported)
         title: r.title || r.Title || r.name || r.Name || '',
-        releaseDate: r.releaseDate || r.ReleaseDate || r.release_date || r.year || r.Year || '',
+        // Optional IMDb id column
+        imdbId: r.imdb || r.IMDB || r.Imdb || r.imdbId || r.imdbID || '',
+        // Optional year/release column; year will still be passed into OMDb search when no imdbId is present
+        releaseDate: r.year || r.Year || r.releaseDate || r.ReleaseDate || r.release_date || '',
         watched: r.watched || r.Watched || false,
         rating: r.rating || r.Rating || null,
         review: r.review || r.Review || r.notes || r.Notes || '',
@@ -68,12 +72,23 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
       for (let i=0;i<rows.length;i++){
         const r = rows[i];
         try{
-          const sq = `${r.title} ${r.releaseDate || ''}`.trim();
-          const res = await searchMoviesOmdb(sq, tmdbApiKey);
-          if (!res.length) {
+          // If an explicit IMDb id is provided, use it directly.
+          let details: OmdbMovie | null = null;
+          if (r.imdbId) {
+            details = await getMovieDetailsOmdb(r.imdbId, tmdbApiKey);
+          } else {
+            const sq = `${r.title} ${r.releaseDate || ''}`.trim();
+            const res = await searchMoviesOmdb(sq, tmdbApiKey);
+            if (!res.length) {
+              out.push({ excelData:r, tmdbMatch:null, confidence:0, status:'unmatched', userMovieExists:false, selected:false });
+              continue;
+            }
+            details = await getMovieDetailsOmdb(res[0].imdbID, tmdbApiKey);
+          }
+
+          if (!details) {
             out.push({ excelData:r, tmdbMatch:null, confidence:0, status:'unmatched', userMovieExists:false, selected:false });
           } else {
-            const details = await getMovieDetailsOmdb(res[0].imdbID, tmdbApiKey);
             const conf = calculateConfidence(r, details);
 
             const existSnap = await getDocs(query(moviesRef, where('imdbId','==', details.imdbID)));

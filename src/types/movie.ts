@@ -74,6 +74,7 @@ export interface OmdbMovie {
 export interface ExcelMovieImport {
   title: string;
   releaseDate?: string;
+  imdbId?: string;
   watched?: boolean;
   rating?: number;
   review?: string;

@@ -51,15 +51,19 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
         const mapped: LocalMovieLike[] = snap.docs
           .map((doc) => {
             const data: any = doc.data();
-            if (!data.tmdbId) return null;
+            // Only accept movies that have an IMDb id (OMDb-based catalogue)
+            if (!data.imdbId) return null;
 
             return {
-              id: data.tmdbId,
+              id: data.imdbId,
               title: data.title,
               release_date: data.releaseDate,
+              // Preserve old TMDB-style poster_path for any legacy data
               poster_path: data.posterUrl?.startsWith('https://image.tmdb.org/t/p/')
                 ? data.posterUrl.replace('https://image.tmdb.org/t/p/w500', '')
                 : null,
+              // New OMDb-based catalogue uses full posterUrl; posterSrc will pick this up
+              posterUrl: data.posterUrl || null,
               source: 'local' as const,
               firestoreId: doc.id,
               cast: data.cast || [],

@@ -124,26 +124,6 @@ const MovieImportModal: React.FC<MovieImportModalProps> = ({
               </button>
             </div>
           </div>
-
-          {selected.id && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <a
-                href={`https://www.themoviedb.org/movie/${selected.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-outline btn-xs sm:btn-sm flex items-center justify-center gap-2"
-              >
-                <img
-                  src="/tmdb.svg"
-                  alt="TMDB"
-                  className="h-4 sm:h-5"
-                />
-              </a>
-              <p className="text-[10px] text-gray-400 max-w-xs">
-                This product uses the TMDB API but is not endorsed or certified by TMDB.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Backdrop closes modal */}
