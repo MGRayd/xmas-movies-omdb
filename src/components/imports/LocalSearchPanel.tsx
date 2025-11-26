@@ -3,11 +3,16 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebase';
-import { TMDBMovie } from '../../types/movie';
 import { posterSrc } from '../../utils/matching';
 import { createMovieUrl } from '../../utils/urlUtils';
 
-type LocalMovieLike = TMDBMovie & {
+type LocalMovieLike = {
+  id: string;
+  title: string;
+  poster_path?: string | null;
+  runtime?: number;
+  genres?: string[];
+  overview?: string | null;
   source?: 'local';
   firestoreId?: string;
   cast?: string[];

@@ -376,7 +376,7 @@ const MovieDetailPage: React.FC = () => {
               {watched ? 'Watched' : 'Mark as Watched'}
             </button>
             
-            <button 
+            <button
               className="btn btn-error btn-outline w-full"
               onClick={handleDelete}
               disabled={saving}
@@ -384,25 +384,6 @@ const MovieDetailPage: React.FC = () => {
               <i className="fas fa-trash mr-2"></i>
               Remove from Collection
             </button>
-            {movie.tmdbId && (
-              <div className="mt-2 flex flex-col items-center">
-                <a
-                  href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline w-full flex items-center justify-center gap-2"
-                >
-                  <img
-                    src="/tmdb.svg"
-                    alt="TMDB"
-                    className="h-5"
-                  />
-                </a>
-                <p className="mt-2 text-xs text-gray-400 text-center">
-                  This product uses the TMDB API but is not endorsed or certified by TMDB.
-                </p>
-              </div>
-            )}
           </div>
         </div>
         

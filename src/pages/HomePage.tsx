@@ -151,7 +151,7 @@ useEffect(() => {
               <i className="fas fa-search"></i>
             </div>
             <h3 className="font-christmas text-xl text-center mb-3">Find Movies</h3>
-            <p className="text-center text-xmas-text text-opacity-80">Search and discover Christmas movies using TMDB integration</p>
+            <p className="text-center text-xmas-text text-opacity-80">Search and discover Christmas movies using OMDb data</p>
           </div>
           
           <div className="bg-xmas-card bg-opacity-70 p-6 rounded-lg shadow-md border-l-2 border-xmas-gold">
@@ -214,22 +214,18 @@ useEffect(() => {
       </div>
 
       <footer className="text-center text-xmas-mute mt-12 pb-8 space-y-4">
-        <p>© {new Date().getFullYear()} Christmas Movie Database</p>
+        <p> {new Date().getFullYear()} Christmas Movie Database</p>
         <div className="flex flex-col items-center justify-center gap-2 text-xs md:text-sm text-xmas-mute/80">
           <a
-                  href={`https://www.themoviedb.org`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn flex items-center justify-center gap-2"
-                >
-          <img
-            src="/tmdb.svg"
-            alt="TMDB logo"
-            className="h-6 md:h-8 w-auto mb-1"
-          />
+            href="https://www.omdbapi.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link link-hover"
+          >
+            OMDb API
           </a>
-          <p className="max-w-xl px-4">
-            This product uses the TMDB API but is not endorsed or certified by TMDB.
+          <p className="max-w-xl px-4 text-center">
+            This product uses the OMDb API but is not endorsed or certified by OMDb.
           </p>
         </div>
       </footer>

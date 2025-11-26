@@ -192,7 +192,7 @@ const MovieImportPage: React.FC = () => {
             onClick={() => setActive('tmdb')}
           >
             <i className="fas fa-search mr-2" />
-            TMDB
+            OMDb
           </button>
 
           <button

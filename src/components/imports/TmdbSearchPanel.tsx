@@ -22,7 +22,7 @@ const TmdbSearchPanel: React.FC<Props> = ({ tmdbApiKey, onSelect }) => {
       const res = await searchMoviesOmdb(q, tmdbApiKey);
       setResults(res);
     } catch (e: any) {
-      setError(e?.message ?? 'TMDB search failed');
+      setError(e?.message ?? 'OMDb search failed');
     } finally {
       setLoading(false);
     }

@@ -39,7 +39,7 @@ export const exportMoviesToCSV = (
     
     return [
       escapedTitle,
-      movie.tmdbId || '',
+      movie.imdbId || '',
       releaseYear,
       userMovie.watched ? 'Yes' : 'No',
       watchedDate,

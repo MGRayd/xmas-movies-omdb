@@ -4,7 +4,7 @@ import {
   collection, getDocs, query as q,
   where, orderBy, startAt, endAt, limit
 } from 'firebase/firestore';
-import { normalizeTitle } from './tmdbService';
+import { normalizeTitle } from './omdbService';
 
 export async function searchLocalMovies(needleRaw: string, take = 24) {
   // Don't normalize the raw search term yet - we'll use both forms

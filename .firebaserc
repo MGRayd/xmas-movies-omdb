@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "xmas-movies"
-  }
+    "default": "my-xmas-movies",
+    "live": "my-xmas-movies"
+  },
+  "targets": {},
+  "etags": {}
 }
