@@ -94,23 +94,38 @@ const MovieImportPage: React.FC = () => {
       setMsg(null);
 
       const moviesRef = collection(db, 'movies');
-      const snap = await getDocs(query(moviesRef, where('imdbId', '==', selected.imdbID)));
       let movieId: string;
-      if (snap.empty) {
-        // Only admins should ever cause a new catalogue movie to be created
-        if (!isAdmin) {
-          setMsg({ type: 'error', text: 'Only admins can add new catalogue movies.' });
+      
+      if (selected.firestoreId) {
+        // Local catalogue entry: we already have a Firestore movie document
+        movieId = selected.firestoreId;
+      } else {
+        // OMDb search result: look up (or create) catalogue movie by IMDb id
+        const imdbId = selected.imdbID || selected.imdbId;
+        if (!imdbId) {
+          setMsg({ type: 'error', text: 'Cannot add movie: missing IMDb id.' });
           setLoading(false);
           return;
         }
-        const ref = await addDoc(moviesRef, {
-          ...formatOmdbMovie(selected),
-          addedAt: new Date(),
-          updatedAt: new Date(),
-        });
-        movieId = ref.id;
-      } else {
-        movieId = snap.docs[0].id;
+
+        const snap = await getDocs(query(moviesRef, where('imdbId', '==', imdbId)));
+
+        if (snap.empty) {
+          // Only admins should ever cause a new catalogue movie to be created
+          if (!isAdmin) {
+            setMsg({ type: 'error', text: 'Only admins can add new catalogue movies.' });
+            setLoading(false);
+            return;
+          }
+          const ref = await addDoc(moviesRef, {
+            ...formatOmdbMovie(selected),
+            addedAt: new Date(),
+            updatedAt: new Date(),
+          });
+          movieId = ref.id;
+        } else {
+          movieId = snap.docs[0].id;
+        }
       }
 
       await saveUserMovie(currentUser.uid, movieId, {
