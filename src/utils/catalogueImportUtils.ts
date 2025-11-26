@@ -1,22 +1,21 @@
 // src/utils/catalogueImportUtils.ts
 import { addDoc, collection, getDocs, query, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { TMDBMovie } from '../types/movie';
-import { getMovieDetails, formatTMDBMovie } from '../services/tmdbService';
+import { getMovieDetailsOmdb, formatOmdbMovie } from '../services/omdbService';
 
-/** Upsert a single movie into the catalogue (Firestore 'movies'), by TMDB id. */
-export async function upsertMovieByTmdbId(
-  tmdbId: number,
-  tmdbApiKey: string
+/** Upsert a single movie into the catalogue (Firestore 'movies'), by IMDb id. */
+export async function upsertMovieByImdbId(
+  imdbId: string,
+  omdbApiKey: string
 ): Promise<{ movieId: string; action: 'created' | 'updated' }> {
-  const details = await getMovieDetails(tmdbId, tmdbApiKey);
+  const details = await getMovieDetailsOmdb(imdbId, omdbApiKey);
 
   const moviesRef = collection(db, 'movies');
-  const q = query(moviesRef, where('tmdbId', '==', details.id));
+  const q = query(moviesRef, where('imdbId', '==', details.imdbID));
   const snap = await getDocs(q);
 
   const payload = {
-    ...formatTMDBMovie(details),
+    ...formatOmdbMovie(details),
     updatedAt: new Date(),
   };
 
@@ -34,35 +33,35 @@ export async function upsertMovieByTmdbId(
 /** Optional helper to avoid hammering the API. */
 const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-/** Upsert many movies by TMDB ids, with optional delay between calls. */
-export async function upsertMoviesByTmdbIds(
-  tmdbIds: number[],
-  tmdbApiKey: string,
+/** Upsert many movies by IMDb ids, with optional delay between calls. */
+export async function upsertMoviesByImdbIds(
+  imdbIds: string[],
+  omdbApiKey: string,
   onProgress?: (i: number, total: number, last: 'created' | 'updated' | 'skipped' | 'error') => void,
   delayMs: number = 200
 ) {
   let created = 0, updated = 0, skipped = 0, errors = 0;
   const movieIds: string[] = [];
 
-  for (let i = 0; i < tmdbIds.length; i++) {
-    const id = tmdbIds[i];
+  for (let i = 0; i < imdbIds.length; i++) {
+    const id = imdbIds[i];
     try {
-      if (!id || Number.isNaN(id)) {
+      if (!id) {
         skipped++;
-        onProgress?.(i + 1, tmdbIds.length, 'skipped');
+        onProgress?.(i + 1, imdbIds.length, 'skipped');
         continue;
       }
-      const { movieId, action } = await upsertMovieByTmdbId(id, tmdbApiKey);
+      const { movieId, action } = await upsertMovieByImdbId(id, omdbApiKey);
       movieIds.push(movieId);
       action === 'created' ? created++ : updated++;
-      onProgress?.(i + 1, tmdbIds.length, action);
+      onProgress?.(i + 1, imdbIds.length, action);
       if (delayMs > 0) await sleep(delayMs);
     } catch (e) {
-      console.error('Catalogue upsert error for TMDB', id, e);
+      console.error('Catalogue upsert error for IMDb', id, e);
       errors++;
-      onProgress?.(i + 1, tmdbIds.length, 'error');
+      onProgress?.(i + 1, imdbIds.length, 'error');
     }
   }
 
-  return { totalRequested: tmdbIds.length, created, updated, skipped, errors, movieIds };
+  return { totalRequested: imdbIds.length, created, updated, skipped, errors, movieIds };
 }

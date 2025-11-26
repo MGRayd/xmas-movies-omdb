@@ -1,16 +1,16 @@
 // src/components/imports/ExcelImportWizard.tsx
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { ExcelMovieImport, TMDBMovie } from '../../types/movie';
+import { ExcelMovieImport, OmdbMovie } from '../../types/movie';
 import { calculateConfidence, posterSrc } from '../../utils/matching';
-import { searchMovies, getMovieDetails, formatTMDBMovie } from '../../services/tmdbService';
+import { searchMoviesOmdb, getMovieDetailsOmdb, formatOmdbMovie } from '../../services/omdbService';
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { saveUserMovie, getUserMovie } from '../../utils/userMovieUtils';
 
 type Match = {
   excelData: ExcelMovieImport;
-  tmdbMatch: TMDBMovie | null;
+  tmdbMatch: OmdbMovie | null;
   confidence: number;
   status: 'matched' | 'unmatched' | 'duplicate' | 'manual';
   userMovieExists: boolean;
@@ -19,7 +19,7 @@ type Match = {
 };
 
 type Props = {
-  tmdbApiKey: string;
+  tmdbApiKey: string; // now OMDb key; prop name retained
   userId: string;
   onDone?: () => void;
 };
@@ -33,7 +33,7 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
   const [importPct, setImportPct] = useState(0);
   const [loading, setLoading] = useState(false);
   const [manualIndex, setManualIndex] = useState<number | null>(null);
-  const [manualResults, setManualResults] = useState<TMDBMovie[]>([]);
+  const [manualResults, setManualResults] = useState<OmdbMovie[]>([]);
   const [error, setError] = useState<string | null>(null);
   const selectedCount = matches.filter(m=>m.selected && m.tmdbMatch).length;
 
@@ -59,7 +59,7 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
   };
 
   const scan = async () => {
-    if (!rows.length || !tmdbApiKey) { setError('Missing data or TMDB key'); return; }
+    if (!rows.length || !tmdbApiKey) { setError('Missing data or OMDb key'); return; }
     try {
       setLoading(true); setError(null); setMatches([]); setScanPct(0);
       const out: Match[] = [];
@@ -69,14 +69,14 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
         const r = rows[i];
         try{
           const sq = `${r.title} ${r.releaseDate || ''}`.trim();
-          const res = await searchMovies(sq, tmdbApiKey);
-          if (!res.results.length) {
+          const res = await searchMoviesOmdb(sq, tmdbApiKey);
+          if (!res.length) {
             out.push({ excelData:r, tmdbMatch:null, confidence:0, status:'unmatched', userMovieExists:false, selected:false });
           } else {
-            const details = await getMovieDetails(res.results[0].id, tmdbApiKey);
+            const details = await getMovieDetailsOmdb(res[0].imdbID, tmdbApiKey);
             const conf = calculateConfidence(r, details);
 
-            const existSnap = await getDocs(query(moviesRef, where('tmdbId','==', details.id)));
+            const existSnap = await getDocs(query(moviesRef, where('imdbId','==', details.imdbID)));
             let movieId: string | undefined;
             let userMovieExists = false;
             if (!existSnap.empty) {
@@ -112,23 +112,23 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
     setLoading(true);
     const current = matches[idx];
     const term = text || current.excelData.title;
-    const res = await searchMovies(term, tmdbApiKey);
+    const res = await searchMoviesOmdb(term, tmdbApiKey);
     setManualIndex(idx);
-    setManualResults(res.results);
+    setManualResults(res);
   } finally {
     setLoading(false);
   }
 };
 
-  const selectManual = async (tmdb: TMDBMovie) => {
+  const selectManual = async (tmdb: OmdbMovie) => {
   if (manualIndex == null) return;
   setLoading(true);
   try {
-    const details = await getMovieDetails(tmdb.id, tmdbApiKey);
+    const details = await getMovieDetailsOmdb(tmdb.imdbID, tmdbApiKey);
     const conf = calculateConfidence(matches[manualIndex].excelData, details);
 
     const moviesRef = collection(db, 'movies');
-    const existSnap = await getDocs(query(moviesRef, where('tmdbId','==', details.id)));
+    const existSnap = await getDocs(query(moviesRef, where('imdbId','==', details.imdbID)));
     let movieId: string | undefined;
     let userMovieExists = false;
     if (!existSnap.empty) {
@@ -171,7 +171,7 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
       try {
         let movieId = m.movieId;
         if (!movieId) {
-          const newRef = await addDoc(moviesRef, { ...formatTMDBMovie(m.tmdbMatch!), addedAt:new Date(), updatedAt:new Date() });
+          const newRef = await addDoc(moviesRef, { ...formatOmdbMovie(m.tmdbMatch!), addedAt:new Date(), updatedAt:new Date() });
           movieId = newRef.id;
         }
         await saveUserMovie(userId, movieId, {
@@ -222,8 +222,8 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
                             {posterSrc(m.tmdbMatch) ? <img src={posterSrc(m.tmdbMatch)} className="object-cover"/> : <div className="w-full h-full bg-base-200"/>}
                           </div>
                           <div>
-                            <div className="font-semibold">{m.tmdbMatch.title}</div>
-                            <div className="text-xs opacity-70">{m.tmdbMatch.release_date?.slice(0,4)}</div>
+                            <div className="font-semibold">{m.tmdbMatch.Title}</div>
+                            <div className="text-xs opacity-70">{m.tmdbMatch.Year}</div>
                           </div>
                         </div>
                       ) : <span className="text-error">No match</span>}
@@ -310,11 +310,11 @@ const ExcelImportWizard: React.FC<Props> = ({ tmdbApiKey, userId, onDone }) => {
             {/* results grid remains the same */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
               {manualResults.map(m=>(
-                <div key={m.id} className="card bg-base-100 shadow cursor-pointer" onClick={()=>selectManual(m)}>
+                <div key={m.imdbID} className="card bg-base-100 shadow cursor-pointer" onClick={()=>selectManual(m)}>
                   <figure>{posterSrc(m) ? <img src={posterSrc(m)}/> : <div className="h-48 w-full bg-base-200"/>}</figure>
                   <div className="card-body p-3">
-                    <div className="text-sm font-semibold">{m.title}</div>
-                    <div className="text-xs opacity-70">{m.release_date?.slice(0,4)}</div>
+                    <div className="text-sm font-semibold">{m.Title}</div>
+                    <div className="text-xs opacity-70">{m.Year}</div>
                   </div>
                 </div>
               ))}

@@ -19,8 +19,8 @@ if (!fs.existsSync(serviceAccountPath)) {
 try {
   admin.initializeApp({
     credential: admin.credential.cert(require('./serviceAccount.json')),
-    projectId: 'xmas-movies',
-    storageBucket: 'xmas-movies.firebasestorage.app'
+    projectId: 'my-xmas-movies',
+    storageBucket: 'my-xmas-movies.firebasestorage.app'
   });
 } catch (error) {
   console.error('Error initializing Firebase Admin SDK:', error);

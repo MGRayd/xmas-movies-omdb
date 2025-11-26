@@ -2,7 +2,7 @@
 
 export interface Movie {
   id: string;
-  tmdbId?: number;
+  imdbId?: string;
   title: string;
   sortTitle?: string; // Title without articles for sorting
   originalTitle?: string;
@@ -38,7 +38,7 @@ export interface User {
   email: string;
   displayName: string;
   photoURL?: string;
-  tmdbApiKey?: string;
+  omdbApiKey?: string;
   isPublicWatchlist?: boolean;
   publicWatchlistName?: string;
   publicWatchlistTagline?: string;
@@ -58,20 +58,17 @@ export interface MovieList {
   updatedAt: Date;
 }
 
-export interface TMDBMovie {
-  id: number;
-  title: string;
-  original_title: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  overview: string;
-  release_date: string;
-  runtime?: number;
-  genres?: { id: number; name: string }[];
-  credits?: {
-    cast: { id: number; name: string; character: string }[];
-    crew: { id: number; name: string; job: string }[];
-  };
+export interface OmdbMovie {
+  imdbID: string;
+  Title: string;
+  Year: string;
+  Released?: string;
+  Runtime?: string;
+  Genre?: string;
+  Director?: string;
+  Actors?: string;
+  Plot?: string;
+  Poster?: string;
 }
 
 export interface ExcelMovieImport {

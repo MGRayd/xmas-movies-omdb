@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useAuth } from '../contexts/AuthContext';
 import { updateMoviesWithSortTitles } from '../utils/migrationUtils';
-import { upsertMoviesByTmdbIds } from '../utils/catalogueImportUtils';
+import { upsertMoviesByImdbIds } from '../utils/catalogueImportUtils';
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ const AdminDashboardPage: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
 
-  // NEW: Catalogue Builder state
+  // NEW: Catalogue Builder state (OMDb / IMDb)
   const [tmdbApiKey, setTmdbApiKey] = useState<string>('');
   const [rawIds, setRawIds] = useState<string>('');
   const [slowMode, setSlowMode] = useState<boolean>(true);
@@ -33,8 +33,8 @@ const AdminDashboardPage: React.FC = () => {
   const [progressLabel, setProgressLabel] = useState('');
 
   useEffect(() => {
-    if (userProfile?.tmdbApiKey) {
-      setTmdbApiKey(userProfile.tmdbApiKey);
+    if (userProfile?.omdbApiKey) {
+      setTmdbApiKey(userProfile.omdbApiKey);
     }
   }, [userProfile]);
 
@@ -159,10 +159,7 @@ const AdminDashboardPage: React.FC = () => {
       .split(/[\s,]+/)
       .map(t => t.trim())
       .filter(Boolean);
-    const nums = tokens
-      .map(t => Number(t))
-      .filter(n => Number.isInteger(n) && n > 0);
-    return Array.from(new Set(nums)); // dedupe
+    return Array.from(new Set(tokens)); // IMDb IDs as strings
   }, [rawIds]);
 
   // NEW: Catalogue import handler
@@ -171,11 +168,11 @@ const AdminDashboardPage: React.FC = () => {
     setSuccess(null);
 
     if (!tmdbApiKey) {
-      setError('TMDB API key required');
+      setError('OMDb API key required');
       return;
     }
     if (parsedIds.length === 0) {
-      setError('Please paste at least one valid TMDB ID');
+      setError('Please paste at least one valid IMDb ID');
       return;
     }
 
@@ -184,7 +181,7 @@ const AdminDashboardPage: React.FC = () => {
       setProgressPct(0);
       setProgressLabel(`Starting… (0 / ${parsedIds.length})`);
 
-      const summary = await upsertMoviesByTmdbIds(
+      const summary = await upsertMoviesByImdbIds(
         parsedIds,
         tmdbApiKey,
         (i, total, last) => {
@@ -289,23 +286,22 @@ const AdminDashboardPage: React.FC = () => {
           <div className="card bg-xmas-card shadow-xl">
             <div className="card-body">
               <h2 className="card-title font-christmas">
-                <i className="fas fa-database text-primary mr-2"></i> Catalogue Builder (TMDB IDs)
+                <i className="fas fa-database text-primary mr-2"></i> Catalogue Builder (IMDb IDs)
               </h2>
               <p className="mb-4">
-                Bulk-import TMDB titles into your <code>movies</code> catalogue only — no user collections will be updated.
+                Bulk-import titles by IMDb ID into your <code>movies</code> catalogue only — no user collections will be updated.
               </p>
 
               <label className="label mt-4">
-                <span className="label-text">TMDB IDs (comma / space / newline separated)</span>
+                <span className="label-text">IMDb IDs (comma / space / newline separated)</span>
               </label>
               <textarea
                 className="textarea textarea-bordered w-full h-40"
                 value={rawIds}
                 onChange={(e) => setRawIds(e.target.value)}
-                placeholder={`e.g. 603, 497, 155, 27205
-603
-497 155
-27205`}
+                placeholder={`e.g. tt0096061, tt0107688
+tt0096061
+tt0107688`}
               />
 
               <div className="flex items-center gap-4 mt-4">
@@ -325,7 +321,7 @@ const AdminDashboardPage: React.FC = () => {
                   className="btn btn-primary ml-auto"
                   onClick={handleCatalogueImport}
                   disabled={importing || parsedIds.length === 0 || !tmdbApiKey}
-                  title={!tmdbApiKey ? 'Add your TMDB API key in Profile > Settings' : undefined}
+                  title={!tmdbApiKey ? 'Add your OMDb API key in Profile > Settings' : undefined}
                 >
                   {importing ? (
                     <>

@@ -30,8 +30,8 @@ const ProfilePage: React.FC = () => {
   });
   
   useEffect(() => {
-    if (userProfile?.tmdbApiKey) {
-      setTmdbApiKey(userProfile.tmdbApiKey);
+    if (userProfile?.omdbApiKey) {
+      setTmdbApiKey(userProfile.omdbApiKey);
     }
     
     const fetchUserStats = async () => {
@@ -76,9 +76,9 @@ const ProfilePage: React.FC = () => {
       setError(null);
       
       const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, { tmdbApiKey });
+      await updateDoc(userRef, { omdbApiKey: tmdbApiKey });
       
-      setSuccess('TMDB API key saved successfully!');
+      setSuccess('OMDb API key saved successfully!');
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -262,18 +262,9 @@ const ProfilePage: React.FC = () => {
                 <h2 className="text-2xl font-bold mb-4">Settings</h2>
 
                 <div className="mb-6">
-                  <h3 className="text-lg font-bold mb-2">TMDB API Key</h3>
+                  <h3 className="text-lg font-bold mb-2">OMDb API Key</h3>
                   <p className="mb-4">
-                    Your TMDB API key is used to fetch movies, cast and other details.
-                    {' '}
-                    <a
-                      href="https://www.themoviedb.org/settings/api"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="link link-primary"
-                    >
-                      The Movie Database
-                    </a>.
+                    Your OMDb API key is used to fetch movies and other details from the Open Movie Database.
                   </p>
 
                   <div className="form-control">
@@ -286,7 +277,7 @@ const ProfilePage: React.FC = () => {
                         className="input input-bordered flex-1 h-12 text-lg"
                         value={tmdbApiKey}
                         onChange={(e) => setTmdbApiKey(e.target.value)}
-                        placeholder="Enter your TMDB API key"
+                        placeholder="Enter your OMDb API key"
                         style={{ letterSpacing: showTmdbKey ? "normal" : "3px" }} // makes masking nicer
                       />
 

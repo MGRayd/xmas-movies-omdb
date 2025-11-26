@@ -7,8 +7,8 @@ import ExcelImportWizard from '../components/imports/ExcelImportWizard';
 import MovieImportModal from '../components/imports/MovieImportModal';
 import MovieRequestButton from '../components/MovieRequestButton';
 import { useAuth } from '../contexts/AuthContext';
-import { TMDBMovie } from '../types/movie';
-import { getMovieDetails, formatTMDBMovie } from '../services/tmdbService';
+import { OmdbMovie } from '../types/movie';
+import { getMovieDetailsOmdb, formatOmdbMovie } from '../services/omdbService';
 import { db } from '../firebase';
 import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { saveUserMovie, getUserMoviesWithDetails } from '../utils/userMovieUtils';
@@ -30,9 +30,9 @@ const MovieImportPage: React.FC = () => {
   const [userMovieIds, setUserMovieIds] = useState<string[]>([]);
 
   useEffect(() => {
-    // Only bother with TMDB key for admins
-    if (isAdmin && userProfile?.tmdbApiKey) {
-      setTmdbApiKey(userProfile.tmdbApiKey);
+    // Only bother with OMDb key for admins
+    if (isAdmin && userProfile?.omdbApiKey) {
+      setTmdbApiKey(userProfile.omdbApiKey);
     } else {
       setTmdbApiKey('');
     }
@@ -57,29 +57,29 @@ const MovieImportPage: React.FC = () => {
     fetchUserMovieIds();
   }, [currentUser]);
 
-  // Local flow – no TMDB call needed (will just show the basic card)
-  const onSelectLocal = (movieLike: TMDBMovie) => {
+  // Local flow – no external call needed (will just show the basic card)
+  const onSelectLocal = (movieLike: any) => {
     setMsg(null);
     setShowDetails(false);
     setSelected(movieLike); // opens modal
   };
 
-  // TMDB flow – admins only
-  const onSelectTmdb = async (movieLike: TMDBMovie) => {
+  // OMDb flow – admins only
+  const onSelectTmdb = async (movieLike: OmdbMovie) => {
     if (!isAdmin) {
-      setMsg({ type: 'error', text: 'Only admins can import directly from TMDB.' });
+      setMsg({ type: 'error', text: 'Only admins can import directly from OMDb.' });
       return;
     }
     if (!tmdbApiKey) {
-      setMsg({ type: 'error', text: 'TMDB key required to fetch details.' });
+      setMsg({ type: 'error', text: 'OMDb key required to fetch details.' });
       return;
     }
     try {
       setLoading(true);
       setMsg(null);
       setShowDetails(false);
-      const details = await getMovieDetails(movieLike.id, tmdbApiKey);
-      setSelected(details); // opens modal with full TMDB details
+      const details = await getMovieDetailsOmdb(movieLike.imdbID, tmdbApiKey);
+      setSelected(details); // opens modal with full OMDb details
     } catch (e: any) {
       setMsg({ type: 'error', text: e?.message ?? 'Failed to fetch details' });
     } finally {
@@ -94,7 +94,7 @@ const MovieImportPage: React.FC = () => {
       setMsg(null);
 
       const moviesRef = collection(db, 'movies');
-      const snap = await getDocs(query(moviesRef, where('tmdbId', '==', selected.id)));
+      const snap = await getDocs(query(moviesRef, where('imdbId', '==', selected.imdbID)));
       let movieId: string;
       if (snap.empty) {
         // Only admins should ever cause a new catalogue movie to be created
@@ -104,7 +104,7 @@ const MovieImportPage: React.FC = () => {
           return;
         }
         const ref = await addDoc(moviesRef, {
-          ...formatTMDBMovie(selected),
+          ...formatOmdbMovie(selected),
           addedAt: new Date(),
           updatedAt: new Date(),
         });
@@ -219,7 +219,7 @@ const MovieImportPage: React.FC = () => {
           {!tmdbApiKey && (
             <div className="alert alert-warning mb-4">
               <i className="fas fa-exclamation-triangle mr-2" />
-              <span>Set your TMDB API key in Profile to search TMDB.</span>
+              <span>Set your OMDb API key in Profile to search OMDb.</span>
             </div>
           )}
           <TmdbSearchPanel tmdbApiKey={tmdbApiKey} onSelect={onSelectTmdb} />
@@ -231,7 +231,7 @@ const MovieImportPage: React.FC = () => {
           {!tmdbApiKey && (
             <div className="alert alert-warning mb-4">
               <i className="fas fa-exclamation-triangle mr-2" />
-              <span>TMDB key required for matching.</span>
+              <span>OMDb key required for matching.</span>
             </div>
           )}
           {currentUser ? (
