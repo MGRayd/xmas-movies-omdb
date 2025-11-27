@@ -24,6 +24,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const [requests, setRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   // NEW: Catalogue Builder state (OMDb / IMDb)
   const [omdbApiKey, setOmdbApiKey] = useState<string>('');
@@ -81,6 +82,67 @@ const AdminDashboardPage: React.FC = () => {
       fetchData();
     }
   }, [isAdmin]);
+
+  const handleExportCatalogueCsv = async () => {
+    try {
+      setError(null);
+      setExportingCsv(true);
+
+      const snapshot = await getDocs(collection(db, 'movies'));
+      const rows: string[] = [];
+      rows.push('Title,IMDb ID,Year');
+
+      const escapeCell = (value: string | null | undefined) => {
+        const s = (value ?? '').toString();
+        const needsQuotes = /[",\n]/.test(s);
+        const escaped = s.replace(/"/g, '""');
+        return needsQuotes ? `"${escaped}"` : escaped;
+      };
+
+      snapshot.forEach(docSnap => {
+        const data: any = docSnap.data();
+        const title = data.title || '';
+        const imdbId = data.imdbId || '';
+        let year = '';
+        if (data.releaseDate) {
+          try {
+            const d = data.releaseDate?.toDate ? data.releaseDate.toDate() : new Date(data.releaseDate);
+            if (!isNaN(d.getTime())) {
+              year = String(d.getFullYear());
+            } else if (typeof data.releaseDate === 'string') {
+              year = data.releaseDate.slice(0, 4);
+            }
+          } catch {
+            if (typeof data.releaseDate === 'string') {
+              year = data.releaseDate.slice(0, 4);
+            }
+          }
+        }
+
+        rows.push([
+          escapeCell(title),
+          escapeCell(imdbId),
+          escapeCell(year),
+        ].join(','));
+      });
+
+      const csvContent = rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'movies_catalogue.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error exporting catalogue CSV:', err);
+      setError(err.message || 'Failed to export catalogue CSV');
+    } finally {
+      setExportingCsv(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -239,6 +301,32 @@ const AdminDashboardPage: React.FC = () => {
       
       <div className="mb-8">
         <h2 className="text-2xl font-christmas mb-4 text-xmas-gold">Movie Administration</h2>
+        <div className="flex justify-end mb-4">
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={handleExportCatalogueCsv}
+            disabled={exportingCsv}
+          >
+            {exportingCsv ? (
+              <>
+                <span className="loading loading-spinner loading-xs mr-2" />
+                Exporting…
+              </>
+            ) : (
+              <>
+                <i className="fas fa-file-csv mr-2" />
+                Export Catalogue CSV
+              </>
+            )}
+          </button>
+          <Link
+            to="/admin/posters"
+            className="btn btn-outline btn-sm ml-2 flex items-center gap-2"
+          >
+            <i className="fas fa-image"></i>
+            Poster Manager
+          </Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Sort Title Migration (existing) */}
           <div className="card bg-xmas-card shadow-xl">
@@ -346,7 +434,7 @@ tt0107688`}
               )}
             </div>
           </div>
-        </div>
+          </div>
 
         {/* NEW: Excel Catalogue Import */}
         <div className="card bg-xmas-card shadow-xl overflow-visible no-card-hover">

@@ -49,6 +49,14 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
           title: r.title || r.Title || r.name || r.Name || '',
           imdbId: r.imdb || r.IMDB || r.Imdb || r.imdbId || r.imdbID || '',
           releaseDate: r.year || r.Year || r.releaseDate || r.ReleaseDate || r.release_date || '',
+          // Optional TMDB id from various column name variants
+          tmdbId:
+            r.tmdbId ||
+            r.TMDBId ||
+            r['TMDB ID'] ||
+            r.tmdb ||
+            r.TMDB ||
+            '',
           watched: r.watched || r.Watched || false,
           rating: r.rating || r.Rating || null,
           review: r.review || r.Review || r.notes || r.Notes || '',
@@ -208,11 +216,23 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
       try {
         const details = m.tmdbMatch!;
         const qSnap = await getDocs(query(moviesRef, where('imdbId', '==', details.imdbID)));
+
+        let parsedTmdbId: number | null = null;
+        const rawTmdb = m.excelData.tmdbId;
+        if (rawTmdb != null && rawTmdb !== '') {
+          const n = Number(rawTmdb);
+          parsedTmdbId = Number.isFinite(n) ? n : null;
+        }
+        const basePayload = { ...formatOmdbMovie(details), updatedAt: new Date() } as any;
+        if (parsedTmdbId != null) {
+          basePayload.tmdbId = parsedTmdbId;
+        }
+
         if (qSnap.empty) {
-          await addDoc(moviesRef, { ...formatOmdbMovie(details), addedAt: new Date(), updatedAt: new Date() });
+          await addDoc(moviesRef, { ...basePayload, addedAt: new Date() });
         } else {
           const docId = qSnap.docs[0].id;
-          await setDoc(doc(db, 'movies', docId), { ...formatOmdbMovie(details), updatedAt: new Date() }, { merge: true });
+          await setDoc(doc(db, 'movies', docId), basePayload, { merge: true });
         }
       } catch {}
       setImportPct(Math.round(((i + 1) / toImport.length) * 100));

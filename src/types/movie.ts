@@ -86,6 +86,7 @@ export interface ExcelMovieImport {
   title: string;
   releaseDate?: string;
   imdbId?: string;
+  tmdbId?: number | string;
   watched?: boolean;
   rating?: number;
   review?: string;

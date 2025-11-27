@@ -25,8 +25,11 @@ export const getFanartPostersForMovie = async (
   movie: Movie,
   fanartApiKey?: string | null
 ): Promise<FanartPosterResult[]> => {
-  // If we already have cached posters and they are fresh enough, reuse them
-  if (movie.fanartPosters && movie.lastFanartFetchAt) {
+  // If we already have cached posters and they are fresh enough, reuse them.
+  // Only treat the cache as valid when there is at least one poster; otherwise,
+  // allow re-fetching so movies that previously returned no images can try again
+  // (for example, after a tmdbId has been added).
+  if (movie.fanartPosters && movie.fanartPosters.length > 0 && movie.lastFanartFetchAt) {
     const last = movie.lastFanartFetchAt instanceof Date
       ? movie.lastFanartFetchAt
       : new Date((movie.lastFanartFetchAt as any).seconds * 1000);
