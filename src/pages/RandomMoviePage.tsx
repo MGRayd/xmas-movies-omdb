@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
 import { createMovieUrl } from '../utils/urlUtils';
+import { getYearFromReleaseDate } from '../utils/dateUtils';
 
 const RandomMoviePage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -175,7 +176,7 @@ const RandomMoviePage: React.FC = () => {
                   </figure>
                   <div className="card-body">
                     <h2 className="card-title text-2xl font-christmas">{randomMovie.title}</h2>
-                    <p className="text-gray-400">{randomMovie.releaseDate?.substring(0, 4)}</p>
+                    <p className="text-gray-400">{randomMovie.releaseDate && getYearFromReleaseDate(randomMovie.releaseDate)}</p>
                     
                     {/*{randomMovie.overview && (
                       <p className="mt-2">{randomMovie.overview}</p>

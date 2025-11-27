@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebase';
 import { posterSrc } from '../../utils/matching';
 import { createMovieUrl } from '../../utils/urlUtils';
+import { getYearFromReleaseDate } from '../../utils/dateUtils';
 
 type LocalMovieLike = {
   id: string;
@@ -101,16 +102,21 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
         case 'title':
           return movie.title.toLowerCase().includes(query);
         case 'year':
-          return movie.release_date && movie.release_date.substring(0, 4).includes(query);
+          return (
+            !!movie.release_date &&
+            !!getYearFromReleaseDate(movie.release_date)?.includes(query)
+          );
         case 'cast':
           return tokens.length ? tokens.some((t) => inCast(t)) : inCast(query);
         case 'all':
-        default:
+        default: {
+          const year = movie.release_date && getYearFromReleaseDate(movie.release_date);
           return (
             movie.title.toLowerCase().includes(query) ||
-            (movie.release_date && movie.release_date.substring(0, 4).includes(query)) ||
+            (year && year.includes(query)) ||
             (movie.cast && movie.cast.some((actor) => actor.toLowerCase().includes(query)))
           );
+        }
       }
     },
     [searchQuery, searchField]
@@ -135,7 +141,9 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
 
     const getYear = (m: LocalMovieLike) => {
       if (!m.release_date) return 0;
-      const year = parseInt(m.release_date.slice(0, 4), 10);
+      const yearStr = getYearFromReleaseDate(m.release_date);
+      if (!yearStr) return 0;
+      const year = parseInt(yearStr, 10);
       return Number.isNaN(year) ? 0 : year;
     };
 
@@ -329,7 +337,7 @@ const LocalSearchPanel: React.FC<Props> = ({ onSelect, userMovieIds }) => {
                       {m.title}
                     </h3>
                     <p className="text-xs text-gray-400 mt-1">
-                      {m.release_date?.slice(0, 4)}
+                      {m.release_date && getYearFromReleaseDate(m.release_date)}
                     </p>
                   </div>
                 </div>

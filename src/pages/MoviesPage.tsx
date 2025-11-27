@@ -9,6 +9,7 @@ import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../ui/ToastProvider';
+import { getYearFromReleaseDate } from '../utils/dateUtils';
 
 type SortOption = 'title' | 'year' | 'rating' | 'watched' | 'added';
 type SearchField = 'title' | 'year' | 'cast' | 'all';
@@ -203,23 +204,25 @@ useEffect(() => {
                (movie.sortTitle && movie.sortTitle.toLowerCase().includes(query)) ||
                (movie.originalTitle && movie.originalTitle.toLowerCase().includes(query));
       case 'year':
-        return movie.releaseDate && movie.releaseDate.substring(0, 4).includes(query);
+        return !!movie.releaseDate && !!getYearFromReleaseDate(movie.releaseDate)?.includes(query);
       case 'cast':
         return tokens.length ? tokens.some(t => inCast(t)) : inCast(query);
       case 'all':
-      default:
+      default: {
+        const year = movie.releaseDate && getYearFromReleaseDate(movie.releaseDate);
         // Search in multiple fields
         return (
           movie.title.toLowerCase().includes(query) || 
           (movie.sortTitle && movie.sortTitle.toLowerCase().includes(query)) ||
           (movie.originalTitle && movie.originalTitle.toLowerCase().includes(query)) ||
-          (movie.releaseDate && movie.releaseDate.substring(0, 4).includes(query)) ||
+          (year && year.includes(query)) ||
           (movie.overview && movie.overview.toLowerCase().includes(query)) ||
           (movie.genres && movie.genres.some(genre => genre.toLowerCase().includes(query))) ||
           (movie.directors && movie.directors.some(director => director.toLowerCase().includes(query))) ||
           (movie.cast && movie.cast.some(actor => actor.toLowerCase().includes(query))) ||
           (userMovie && userMovie.review && userMovie.review.toLowerCase().includes(query))
         );
+      }
     }
   }, [searchQuery, searchField, userMovies]);
 
@@ -260,10 +263,13 @@ useEffect(() => {
           const titleB = b.sortTitle || b.title;
           return titleA.localeCompare(titleB) * direction;
         
-        case 'year':
-          const yearA = a.releaseDate ? parseInt(a.releaseDate.substring(0, 4)) : 0;
-          const yearB = b.releaseDate ? parseInt(b.releaseDate.substring(0, 4)) : 0;
+        case 'year': {
+          const yearStrA = a.releaseDate && getYearFromReleaseDate(a.releaseDate);
+          const yearStrB = b.releaseDate && getYearFromReleaseDate(b.releaseDate);
+          const yearA = yearStrA ? parseInt(yearStrA, 10) : 0;
+          const yearB = yearStrB ? parseInt(yearStrB, 10) : 0;
           return (yearA - yearB) * direction;
+        }
         
         case 'rating':
           const ratingA = userMovieA?.rating || 0;
@@ -519,7 +525,7 @@ useEffect(() => {
                   <div className="p-1 sm:p-2 flex-grow flex flex-col">
                     <h3 className="text-xs sm:text-sm font-medium line-clamp-2">{movie.title}</h3>
                     <div className="flex justify-between items-center mt-1">
-                      <p className="text-xs text-gray-400">{movie.releaseDate?.substring(0, 4)}</p>
+                      <p className="text-xs text-gray-400">{movie.releaseDate && getYearFromReleaseDate(movie.releaseDate)}</p>
                       {userMovie && userMovie.rating && (
                         <div className="flex items-center">
                           <span className="text-yellow-400 mr-0.5">

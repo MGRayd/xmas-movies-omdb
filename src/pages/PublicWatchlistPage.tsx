@@ -5,6 +5,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
+import { getYearFromReleaseDate } from '../utils/dateUtils';
 
 interface PublicStats {
   totalWatched: number;
@@ -229,7 +230,7 @@ const PublicWatchlistPage: React.FC = () => {
                   <div className="p-1 sm:p-2 flex-grow flex flex-col">
                     <h3 className="text-xs sm:text-sm font-medium line-clamp-2">{movie.title}</h3>
                     <div className="flex justify-between items-center mt-1">
-                      <p className="text-xs text-gray-400">{movie.releaseDate?.substring(0, 4)}</p>
+                      <p className="text-xs text-gray-400">{movie.releaseDate && getYearFromReleaseDate(movie.releaseDate)}</p>
                       {userMovie && userMovie.rating != null && (
                         <div className="flex items-center">
                           <span className="text-yellow-400 mr-0.5">

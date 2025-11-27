@@ -349,7 +349,7 @@ tt0107688`}
         </div>
 
         {/* NEW: Excel Catalogue Import */}
-        <div className="card bg-xmas-card shadow-xl">
+        <div className="card bg-xmas-card shadow-xl overflow-visible no-card-hover">
           <div className="card-body">
             <h2 className="card-title font-christmas">
               <i className="fas fa-file-excel text-primary mr-2"></i> Excel Catalogue Import

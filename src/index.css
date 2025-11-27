@@ -191,6 +191,21 @@
   );
 }
 
+/* Opt-out helper to disable card hover effects for specific cards */
+.no-card-hover:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: theme('colors.base-300');
+}
+
+.no-card-hover:hover::before {
+  content: none;
+}
+
+.no-card-hover:hover .card-body {
+  background-image: none;
+}
+
 .btn-outline { border-color: theme('colors.terraveil.line'); }
 
 /* Sidebar tone (if you’re using drawers/menus) */

@@ -324,8 +324,8 @@ const ExcelImportWizard: React.FC<Props> = ({ omdbApiKey, userId, onDone }) => {
       )}
 
       {manualIndex !== null && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
+          <div className="bg-base-100 rounded-box shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden p-6">
             <h3 className="font-bold text-lg mb-4">
               Manual match: {matches[manualIndex].excelData.title}
             </h3>
@@ -346,7 +346,7 @@ const ExcelImportWizard: React.FC<Props> = ({ omdbApiKey, userId, onDone }) => {
                 onClick={() =>
                   manualSearch(
                     manualIndex,
-                    (document.querySelector('.modal input') as HTMLInputElement)?.value
+                    (document.querySelector('[data-manual-search-input]') as HTMLInputElement)?.value
                   )
                 }
                 disabled={loading}
@@ -368,14 +368,14 @@ const ExcelImportWizard: React.FC<Props> = ({ omdbApiKey, userId, onDone }) => {
               ))}
             </div>
 
-            <div className="modal-action">
+            <div className="flex justify-end mt-6">
               <button className="btn" onClick={() => { setManualIndex(null); setManualResults([]); }}>
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
     </div>
