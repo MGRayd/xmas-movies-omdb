@@ -16,6 +16,8 @@ const ProfilePage: React.FC = () => {
   const [showTmdbKey, setShowTmdbKey] = useState(false);
   
   const [omdbApiKey, setOmdbApiKey] = useState('');
+  const [fanartApiKey, setFanartApiKey] = useState('');
+  const [showFanartKey, setShowFanartKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [migrationLoading, setMigrationLoading] = useState(false);
@@ -32,6 +34,9 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (userProfile?.omdbApiKey) {
       setOmdbApiKey(userProfile.omdbApiKey);
+    }
+    if (userProfile?.fanartApiKey) {
+      setFanartApiKey(userProfile.fanartApiKey);
     }
     
     const fetchUserStats = async () => {
@@ -87,6 +92,29 @@ const ProfilePage: React.FC = () => {
     } catch (err: any) {
       console.error('Error saving API key:', err);
       setError(err.message || 'Failed to save API key');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveFanartApiKey = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, { fanartApiKey: fanartApiKey || null });
+      
+      setSuccess('fanart.tv API key saved successfully!');
+      
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+    } catch (err: any) {
+      console.error('Error saving fanart.tv API key:', err);
+      setError(err.message || 'Failed to save fanart.tv API key');
     } finally {
       setLoading(false);
     }
@@ -255,7 +283,55 @@ const ProfilePage: React.FC = () => {
         
         <div className="md:col-span-2">
           <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-            
+            {/* fanart.tv API key – available to all users */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-4">Artwork Settings</h2>
+
+              <div className="mb-6">
+                <h3 className="text-lg font-bold mb-2">fanart.tv API Key</h3>
+                <p className="mb-4">
+                  If you have a fanart.tv account, you can add your personal API key here to fetch alternative posters
+                  for movies in your collection.
+                </p>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">API Key</span>
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+                    <input
+                      type={showFanartKey ? "text" : "password"}
+                      className="input input-bordered flex-1 h-12 text-lg"
+                      value={fanartApiKey}
+                      onChange={(e) => setFanartApiKey(e.target.value)}
+                      placeholder="Enter your fanart.tv API key"
+                      style={{ letterSpacing: showFanartKey ? "normal" : "3px" }}
+                    />
+
+                    <button
+                      type="button"
+                      className="btn btn-ghost w-12"
+                      onClick={() => setShowFanartKey((s) => !s)}
+                    >
+                      <i className={`fas ${showFanartKey ? "fa-eye-slash" : "fa-eye"}`}></i>
+                    </button>
+
+                    <button
+                      className="btn btn-primary w-full sm:w-auto"
+                      onClick={handleSaveFanartApiKey}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <span className="loading loading-spinner loading-sm"></span>
+                      ) : (
+                        <i className="fas fa-save"></i>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Settings + TMDB key – ADMIN ONLY */}
             {isAdmin && (
               <>

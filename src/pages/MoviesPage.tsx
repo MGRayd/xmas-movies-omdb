@@ -492,9 +492,9 @@ useEffect(() => {
                 <div className="relative rounded-lg overflow-hidden bg-xmas-card shadow-md h-full flex flex-col">
                   {/* Poster */}
                   <div className="relative">
-                    {movie.posterUrl ? (
+                    {userMovie?.posterUrlOverride || movie.posterUrl ? (
                       <img 
-                        src={movie.posterUrl} 
+                        src={userMovie?.posterUrlOverride || movie.posterUrl} 
                         alt={movie.title} 
                         className="w-full h-auto object-cover"
                         style={{ aspectRatio: '2/3' }}

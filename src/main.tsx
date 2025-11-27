@@ -26,6 +26,7 @@ import ProfilePage from './pages/ProfilePage'
 import AchievementsPage from './pages/AchievementsPage'
 import PublicWatchlistPage from './pages/PublicWatchlistPage'
 import PublicMoviePage from './pages/PublicMoviePage'
+import EditMoviePosterPage from './pages/EditMoviePosterPage'
 
 // Admin pages
 import AdminLoginPage from './pages/AdminLoginPage'
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
         children: [
           { path: '/movies', element: <MoviesPage /> },
           { path: '/movies/:movieId', element: <MovieDetailPage /> },
+          { path: '/movies/:movieId/edit-poster', element: <EditMoviePosterPage /> },
           { path: '/import', element: <MovieImportPage /> },
           { path: '/random', element: <RandomMoviePage /> },
           { path: '/profile', element: <ProfilePage /> },

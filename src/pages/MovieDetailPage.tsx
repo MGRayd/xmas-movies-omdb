@@ -345,9 +345,9 @@ const MovieDetailPage: React.FC = () => {
         {/* Movie Poster */}
         <div className="md:col-span-1">
           <div className="rounded-lg overflow-hidden shadow-xl">
-            {movie.posterUrl ? (
+            {userMovie?.posterUrlOverride || movie.posterUrl ? (
               <img 
-                src={movie.posterUrl} 
+                src={userMovie?.posterUrlOverride || movie.posterUrl} 
                 alt={movie.title} 
                 className="w-full object-contain"
                 style={{ aspectRatio: '2/3' }}
@@ -367,6 +367,13 @@ const MovieDetailPage: React.FC = () => {
               <i className={`fas fa-star mr-2 ${favorite ? 'text-white' : ''}`}></i>
               {favorite ? 'Favourited' : 'Add to Favourites'}
             </button>
+            <Link
+              to={`/movies/${slugParam}/edit-poster${location.search}`}
+              className="btn btn-outline w-full"
+            >
+              <i className="fas fa-image mr-2"></i>
+              Edit Poster
+            </Link>
             
             <button 
               className={`btn ${watched ? 'btn-success' : 'btn-outline'} w-full`}

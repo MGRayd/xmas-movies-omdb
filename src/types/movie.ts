@@ -3,6 +3,7 @@
 export interface Movie {
   id: string;
   imdbId?: string;
+  tmdbId?: number;
   title: string;
   sortTitle?: string; // Title without articles for sorting
   originalTitle?: string;
@@ -17,6 +18,10 @@ export interface Movie {
   isChristmas: boolean;
   addedAt: Date;
   updatedAt: Date;
+  // Optional cache timestamp for external artwork lookups (e.g. fanart.tv)
+  lastFanartFetchAt?: Date;
+  // Optional cached list of poster URLs fetched from fanart.tv
+  fanartPosters?: string[];
 }
 
 export interface UserMovie {
@@ -31,6 +36,10 @@ export interface UserMovie {
   addedAt: Date;
   updatedAt: Date;
   vibeTags?: string[];
+  // Optional reference to a poster in movies/{movieId}/posters/{posterId}
+  posterId?: string;
+  // Optional direct URL override for this user's chosen poster
+  posterUrlOverride?: string;
 }
 
 export interface User {
@@ -39,6 +48,8 @@ export interface User {
   displayName: string;
   photoURL?: string;
   omdbApiKey?: string;
+  // Per-user fanart.tv API key used to fetch alternative artwork
+  fanartApiKey?: string;
   isPublicWatchlist?: boolean;
   publicWatchlistName?: string;
   publicWatchlistTagline?: string;
