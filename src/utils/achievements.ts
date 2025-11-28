@@ -212,8 +212,24 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
       }
 
       const movie = moviesById[um.movieId];
-      if (movie && movie.releaseDate && movie.releaseDate.substring(0, 4) < '2000') {
-        classicWatched++;
+      if (movie && movie.releaseDate) {
+        const rd = movie.releaseDate;
+        let year: number | null = null;
+
+        // If the string starts with a 4-digit year, use that directly
+        if (/^\d{4}/.test(rd)) {
+          year = Number(rd.substring(0, 4));
+        } else {
+          // Fallback: let Date parse formats like "13 Dec 2015"
+          const parsed = new Date(rd);
+          if (!isNaN(parsed.getTime())) {
+            year = parsed.getFullYear();
+          }
+        }
+
+        if (year !== null && year < 2000) {
+          classicWatched++;
+        }
       }
       if (movie && movie.genres && movie.genres.includes('Romance')) {
         romanceCount++;

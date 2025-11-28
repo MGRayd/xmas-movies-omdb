@@ -1,6 +1,6 @@
 // src/components/imports/TmdbSearchPanel.tsx
 import React, { useState } from 'react';
-import { searchMoviesOmdb } from '../../services/omdbService';
+import { searchMoviesOmdb, getMovieDetailsOmdb } from '../../services/omdbService';
 import { OmdbMovie } from '../../types/movie';
 import { posterSrc } from '../../utils/matching';
 
@@ -16,12 +16,28 @@ const TmdbSearchPanel: React.FC<Props> = ({ omdbApiKey, onSelect }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
-    if (!q.trim()) return;
+    const raw = q.trim();
+    if (!raw) return;
+
+    // Detect IMDb id: tt1234567 or just 1234567
+    const imdbLike = raw.toLowerCase().startsWith('tt') ? raw : `tt${raw}`;
+    const imdbMatch = /^tt\d+$/.test(imdbLike) ? imdbLike : null;
+
     try {
-      setLoading(true); setError(null);
-      const res = await searchMoviesOmdb(q, omdbApiKey);
-      setResults(res);
+      setLoading(true);
+      setError(null);
+
+      if (imdbMatch) {
+        // Direct lookup by IMDb id
+        const details = await getMovieDetailsOmdb(imdbMatch, omdbApiKey);
+        setResults([details]);
+      } else {
+        // Fallback to title search
+        const res = await searchMoviesOmdb(raw, omdbApiKey);
+        setResults(res);
+      }
     } catch (e: any) {
+      setResults([]);
       setError(e?.message ?? 'OMDb search failed');
     } finally {
       setLoading(false);
@@ -31,7 +47,7 @@ const TmdbSearchPanel: React.FC<Props> = ({ omdbApiKey, onSelect }) => {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <input className="input input-bordered flex-1" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search OMDb..." onKeyDown={e=>e.key==='Enter'&&handleSearch()}/>
+        <input className="input input-bordered flex-1" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search OMDb by title or IMDb id..." onKeyDown={e=>e.key==='Enter'&&handleSearch()}/>
         <button className="btn btn-primary" onClick={handleSearch} disabled={loading || !omdbApiKey}>{loading ? <span className="loading loading-spinner loading-sm"/> : 'Search'}</button>
       </div>
       {error && <div className="alert alert-error">{error}</div>}

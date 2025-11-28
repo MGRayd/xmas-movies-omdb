@@ -32,6 +32,7 @@ import EditMoviePosterPage from './pages/EditMoviePosterPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPosterManagerPage from './pages/AdminPosterManagerPage'
+import AdminImportPage from './pages/AdminImportPage'
 
 const router = createBrowserRouter([
   { 
@@ -64,6 +65,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AdminDashboardPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/admin/import',
+        element: (
+          <ProtectedRoute>
+            <AdminImportPage />
           </ProtectedRoute>
         ),
       },

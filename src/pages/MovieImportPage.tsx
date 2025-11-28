@@ -2,25 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LocalSearchPanel from '../components/imports/LocalSearchPanel';
-import TmdbSearchPanel from '../components/imports/TmdbSearchPanel';
-import ExcelImportWizard from '../components/imports/ExcelImportWizard';
 import MovieImportModal from '../components/imports/MovieImportModal';
 import MovieRequestButton from '../components/MovieRequestButton';
 import { useAuth } from '../contexts/AuthContext';
-import { OmdbMovie } from '../types/movie';
-import { getMovieDetailsOmdb, formatOmdbMovie } from '../services/omdbService';
 import { db } from '../firebase';
-import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { saveUserMovie, getUserMoviesWithDetails } from '../utils/userMovieUtils';
 import { clearMovieCache } from '../utils/cacheUtils';
-import { useIsAdmin } from '../hooks/useIsAdmin';
 
 const MovieImportPage: React.FC = () => {
-  const { currentUser, userProfile } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const { currentUser } = useAuth();
 
-  const [omdbApiKey, setOmdbApiKey] = useState('');
-  const [active, setActive] = useState<'local' | 'tmdb' | 'excel'>('local');
   const [selected, setSelected] = useState<any | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,15 +20,6 @@ const MovieImportPage: React.FC = () => {
 
   // Movie IDs (Firestore movie doc IDs) already in the user’s collection
   const [userMovieIds, setUserMovieIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Only bother with OMDb key for admins
-    if (isAdmin && userProfile?.omdbApiKey) {
-      setOmdbApiKey(userProfile.omdbApiKey);
-    } else {
-      setOmdbApiKey('');
-    }
-  }, [userProfile, isAdmin]);
 
   // Load user's existing movie IDs so Local panel can mark "In Collection"
   useEffect(() => {
@@ -64,29 +47,6 @@ const MovieImportPage: React.FC = () => {
     setSelected(movieLike); // opens modal
   };
 
-  // OMDb flow – admins only
-  const onSelectTmdb = async (movieLike: OmdbMovie) => {
-    if (!isAdmin) {
-      setMsg({ type: 'error', text: 'Only admins can import directly from OMDb.' });
-      return;
-    }
-    if (!omdbApiKey) {
-      setMsg({ type: 'error', text: 'OMDb key required to fetch details.' });
-      return;
-    }
-    try {
-      setLoading(true);
-      setMsg(null);
-      setShowDetails(false);
-      const details = await getMovieDetailsOmdb(movieLike.imdbID, omdbApiKey);
-      setSelected(details); // opens modal with full OMDb details
-    } catch (e: any) {
-      setMsg({ type: 'error', text: e?.message ?? 'Failed to fetch details' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const addToCollection = async () => {
     if (!currentUser || !selected) return;
     try {
@@ -95,37 +55,15 @@ const MovieImportPage: React.FC = () => {
 
       const moviesRef = collection(db, 'movies');
       let movieId: string;
-      
+
       if (selected.firestoreId) {
         // Local catalogue entry: we already have a Firestore movie document
         movieId = selected.firestoreId;
       } else {
-        // OMDb search result: look up (or create) catalogue movie by IMDb id
-        const imdbId = selected.imdbID || selected.imdbId;
-        if (!imdbId) {
-          setMsg({ type: 'error', text: 'Cannot add movie: missing IMDb id.' });
-          setLoading(false);
-          return;
-        }
-
-        const snap = await getDocs(query(moviesRef, where('imdbId', '==', imdbId)));
-
-        if (snap.empty) {
-          // Only admins should ever cause a new catalogue movie to be created
-          if (!isAdmin) {
-            setMsg({ type: 'error', text: 'Only admins can add new catalogue movies.' });
-            setLoading(false);
-            return;
-          }
-          const ref = await addDoc(moviesRef, {
-            ...formatOmdbMovie(selected),
-            addedAt: new Date(),
-            updatedAt: new Date(),
-          });
-          movieId = ref.id;
-        } else {
-          movieId = snap.docs[0].id;
-        }
+        // Safety net: Local import should always provide a firestoreId
+        setMsg({ type: 'error', text: 'Unable to add this movie from catalogue.' });
+        setLoading(false);
+        return;
       }
 
       await saveUserMovie(currentUser.uid, movieId, {
@@ -191,75 +129,12 @@ const MovieImportPage: React.FC = () => {
         <MovieRequestButton />
       </div>
 
-      {/* Tabs – show all import options only if admin */}
-      {isAdmin && (
-        <div className="tabs tabs-boxed mb-6">
-          <button
-            className={`tab ${active === 'local' ? 'tab-active' : ''}`}
-            onClick={() => setActive('local')}
-          >
-            <i className="fas fa-database mr-2" />
-            Local
-          </button>
-
-          <button
-            className={`tab ${active === 'tmdb' ? 'tab-active' : ''}`}
-            onClick={() => setActive('tmdb')}
-          >
-            <i className="fas fa-search mr-2" />
-            OMDb
-          </button>
-
-          <button
-            className={`tab ${active === 'excel' ? 'tab-active' : ''}`}
-            onClick={() => setActive('excel')}
-          >
-            <i className="fas fa-file-excel mr-2" />
-            Excel
-          </button>
-        </div>
-      )}
-
-      {active === 'local' && (
-        <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-          <LocalSearchPanel
-            onSelect={onSelectLocal}
-            userMovieIds={userMovieIds}
-          />
-        </div>
-      )}
-
-      {active === 'tmdb' && isAdmin && (
-        <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-          {!omdbApiKey && (
-            <div className="alert alert-warning mb-4">
-              <i className="fas fa-exclamation-triangle mr-2" />
-              <span>Set your OMDb API key in Profile to search OMDb.</span>
-            </div>
-          )}
-          <TmdbSearchPanel omdbApiKey={omdbApiKey} onSelect={onSelectTmdb} />
-        </div>
-      )}
-
-      {active === 'excel' && isAdmin && (
-        <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
-          {!omdbApiKey && (
-            <div className="alert alert-warning mb-4">
-              <i className="fas fa-exclamation-triangle mr-2" />
-              <span>OMDb key required for matching.</span>
-            </div>
-          )}
-          {currentUser ? (
-            <ExcelImportWizard
-              omdbApiKey={omdbApiKey}
-              userId={currentUser.uid}
-              onDone={() => setActive('local')}
-            />
-          ) : (
-            <div className="alert alert-info">Log in to import from Excel.</div>
-          )}
-        </div>
-      )}
+      <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
+        <LocalSearchPanel
+          onSelect={onSelectLocal}
+          userMovieIds={userMovieIds}
+        />
+      </div>
 
       {/* Modal for selected movie */}
       {selected && (

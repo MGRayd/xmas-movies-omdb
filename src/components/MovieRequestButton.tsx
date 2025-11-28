@@ -8,6 +8,8 @@ const MovieRequestButton: React.FC = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
+  const [imdbId, setImdbId] = useState('');
+  const [imdbUrl, setImdbUrl] = useState('');
   const [tmdbId, setTmdbId] = useState<string>('');
   const [tmdbUrl, setTmdbUrl] = useState('');
   const [year, setYear] = useState('');
@@ -24,6 +26,8 @@ const MovieRequestButton: React.FC = () => {
 
   const resetForm = () => {
     setTitle('');
+    setImdbId('');
+    setImdbUrl('');
     setTmdbId('');
     setTmdbUrl('');
     setYear('');
@@ -64,6 +68,8 @@ const MovieRequestButton: React.FC = () => {
 
       await addDoc(collection(db, 'Requests'), {
         title: title.trim(),
+        imdbId: imdbId.trim() || null,
+        imdbUrl: imdbUrl.trim() || null,
         tmdbId: tmdbId ? Number(tmdbId) : null,
         tmdbUrl: tmdbUrl.trim() || null,
         year: year.trim() || null,
@@ -144,15 +150,15 @@ const MovieRequestButton: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">
-                    <span className="label-text">TMDB ID (optional)</span>
+                    <span className="label-text">IMDb ID (optional)</span>
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     className="input input-bordered w-full"
-                    value={tmdbId}
-                    onChange={(e) => setTmdbId(e.target.value)}
+                    value={imdbId}
+                    onChange={(e) => setImdbId(e.target.value)}
                     disabled={submitting}
-                    placeholder="e.g. 8871"
+                    placeholder="e.g. tt0096061"
                   />
                 </div>
                 <div>
@@ -170,21 +176,36 @@ const MovieRequestButton: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">TMDB URL (optional)</span>
-                </label>
-                <input
-                  type="url"
-                  className="input input-bordered w-full"
-                  value={tmdbUrl}
-                  onChange={(e) => setTmdbUrl(e.target.value)}
-                  disabled={submitting}
-                  placeholder="https://www.themoviedb.org/movie/..."
-                />
-                <p className="text-xs opacity-70 mt-1">
-                  If you provide a TMDB ID, the URL will be auto-filled. You can also paste a URL directly.
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="label">
+                    <span className="label-text">IMDb URL (optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    className="input input-bordered w-full"
+                    value={imdbUrl}
+                    onChange={(e) => setImdbUrl(e.target.value)}
+                    disabled={submitting}
+                    placeholder="https://www.imdb.com/title/..."
+                  />
+                </div>
+                <div>
+                  <label className="label">
+                    <span className="label-text">TMDB URL (optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    className="input input-bordered w-full"
+                    value={tmdbUrl}
+                    onChange={(e) => setTmdbUrl(e.target.value)}
+                    disabled={submitting}
+                    placeholder="https://www.themoviedb.org/movie/..."
+                  />
+                  <p className="text-xs opacity-70 mt-1">
+                    If you provide a TMDB ID, the URL will be auto-filled. You can also paste a URL directly.
+                  </p>
+                </div>
               </div>
 
               <div>
