@@ -50,6 +50,8 @@ export interface User {
   omdbApiKey?: string;
   // Per-user fanart.tv API key used to fetch alternative artwork
   fanartApiKey?: string;
+  // Admin-only TMDb API key used for catalogue poster management
+  tmdbApiKey?: string;
   isPublicWatchlist?: boolean;
   publicWatchlistName?: string;
   publicWatchlistTagline?: string;

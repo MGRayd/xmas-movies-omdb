@@ -1,20 +1,24 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { useIsAdmin } from '../hooks/useIsAdmin';
+import { useAuth } from '../contexts/AuthContext';
+import { getMoviePostersFromTmdb, TmdbPoster } from '../services/tmdbService';
 
 interface MovieForPoster {
   id: string;
   title: string;
   releaseDate?: string;
   posterUrl?: string;
+  tmdbId?: number;
 }
 
 const AdminPosterManagerPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: adminCheckLoading } = useIsAdmin();
+  const { userProfile } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +26,13 @@ const AdminPosterManagerPage: React.FC = () => {
   const [movies, setMovies] = useState<MovieForPoster[]>([]);
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [tmdbLoadingId, setTmdbLoadingId] = useState<string | null>(null);
+  const [tmdbPickingId, setTmdbPickingId] = useState<string | null>(null);
+  const [tmdbPosters, setTmdbPosters] = useState<TmdbPoster[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [posterFilter, setPosterFilter] = useState<'all' | 'with' | 'without'>('all');
+
+  const fileInputsRef = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     if (!adminCheckLoading && !isAdmin) {
@@ -49,6 +58,7 @@ const AdminPosterManagerPage: React.FC = () => {
             title: data.title || '(Untitled)',
             releaseDate: data.releaseDate,
             posterUrl: data.posterUrl,
+            tmdbId: data.tmdbId,
           });
         });
 
@@ -69,6 +79,13 @@ const AdminPosterManagerPage: React.FC = () => {
 
   const handleFileChange = (movieId: string, file: File | null) => {
     setFiles((prev) => ({ ...prev, [movieId]: file }));
+  };
+
+  const handleTriggerFileInput = (movieId: string) => {
+    const input = fileInputsRef.current[movieId];
+    if (input) {
+      input.click();
+    }
   };
 
   const handleUpload = async (movie: MovieForPoster) => {
@@ -137,6 +154,68 @@ const AdminPosterManagerPage: React.FC = () => {
       );
     });
   }, [movies, searchQuery, posterFilter]);
+
+  const tmdbApiKey = userProfile?.tmdbApiKey || '';
+
+  const handleOpenTmdbPosters = async (movie: MovieForPoster) => {
+    if (!tmdbApiKey) {
+      setError('TMDb API key is required. Set it on your Profile page.');
+      return;
+    }
+
+    if (!movie.tmdbId) {
+      setError('No tmdbId stored for this movie.');
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccess(null);
+      setTmdbLoadingId(movie.id);
+
+      const posters = await getMoviePostersFromTmdb(movie.tmdbId, tmdbApiKey);
+      if (!posters.length) {
+        setError('No posters returned from TMDb for this movie.');
+        return;
+      }
+
+      setTmdbPosters(posters);
+      setTmdbPickingId(movie.id);
+    } catch (e: any) {
+      console.error('Error fetching TMDb posters:', e);
+      setError(e?.message || 'Failed to fetch TMDb posters');
+    } finally {
+      setTmdbLoadingId(null);
+    }
+  };
+
+  const handleSelectTmdbPoster = async (poster: TmdbPoster) => {
+    if (!tmdbPickingId) return;
+
+    const movie = movies.find((m) => m.id === tmdbPickingId);
+    if (!movie) return;
+
+    try {
+      setError(null);
+      setSuccess(null);
+
+      await updateDoc(doc(db, 'movies', movie.id), {
+        posterUrl: poster.url,
+        updatedAt: new Date(),
+      });
+
+      setMovies((prev) =>
+        prev.map((m) => (m.id === movie.id ? { ...m, posterUrl: poster.url } : m))
+      );
+
+      setSuccess(`TMDb poster applied for "${movie.title}".`);
+      setTmdbPickingId(null);
+      setTmdbPosters([]);
+    } catch (e: any) {
+      console.error('Error applying TMDb poster:', e);
+      setError(e?.message || 'Failed to apply TMDb poster');
+    }
+  };
 
   if (adminCheckLoading || loading) {
     return (
@@ -235,7 +314,7 @@ const AdminPosterManagerPage: React.FC = () => {
       {filteredMovies.length === 0 ? (
         <p className="text-sm opacity-80">No movies found.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
           {filteredMovies.map((movie) => {
             const file = files[movie.id] || null;
             const year = movie.releaseDate
@@ -245,51 +324,54 @@ const AdminPosterManagerPage: React.FC = () => {
             return (
               <div
                 key={movie.id}
-                className="card bg-xmas-card shadow-xl overflow-hidden flex flex-col"
+                className="block transition-transform hover:scale-[1.02] hover:shadow-xl cursor-default"
               >
-                <div className="card-body flex flex-col gap-3">
-                  <div className="flex gap-3">
-                    <div className="w-20 h-32 rounded overflow-hidden bg-gray-800 flex-shrink-0 flex items-center justify-center">
-                      {movie.posterUrl ? (
-                        <img
-                          src={movie.posterUrl}
-                          alt={movie.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <i className="fas fa-film text-2xl text-gray-500"></i>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="font-semibold text-sm md:text-base line-clamp-2">
-                        {movie.title}
-                      </h2>
-                      {year && (
-                        <p className="text-xs text-gray-400 mt-1">{year}</p>
-                      )}
-                      {movie.posterUrl && (
-                        <a
-                          href={movie.posterUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="link link-primary text-xs mt-1 inline-block"
-                        >
-                          Open current poster
-                        </a>
-                      )}
-                    </div>
+                <div className="relative rounded-lg overflow-hidden bg-xmas-card shadow-md h-full flex flex-col">
+                  <div className="relative">
+                    {movie.posterUrl ? (
+                      <img
+                        src={movie.posterUrl}
+                        alt={movie.title}
+                        className="w-full h-auto object-cover"
+                        style={{ aspectRatio: '2/3' }}
+                      />
+                    ) : (
+                      <div
+                        className="w-full flex items-center justify-center bg-gray-800"
+                        style={{ aspectRatio: '2/3' }}
+                      >
+                        <i className="fas fa-film text-2xl text-gray-500" />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-xs md:text-sm">
-                        Upload new poster
-                      </span>
-                    </label>
+                  <div className="p-1 sm:p-2 flex-grow flex flex-col">
+                    <h2 className="text-xs sm:text-sm font-medium line-clamp-2">
+                      {movie.title}
+                    </h2>
+                    {year && (
+                      <p className="text-xs text-gray-400 mt-1">{year}</p>
+                    )}
+                    {movie.posterUrl && (
+                      <a
+                        href={movie.posterUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link link-primary text-[10px] sm:text-xs mt-0.5 inline-block"
+                      >
+                        Open current poster
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="px-1 sm:px-2 pb-2 space-y-1">
                     <input
                       type="file"
                       accept="image/*"
-                      className="file-input file-input-bordered file-input-sm w-full"
+                      ref={(el) => {
+                        fileInputsRef.current[movie.id] = el;
+                      }}
+                      className="hidden"
                       onChange={(e) =>
                         handleFileChange(
                           movie.id,
@@ -299,30 +381,98 @@ const AdminPosterManagerPage: React.FC = () => {
                         )
                       }
                     />
-                  </div>
 
-                  <button
-                    className="btn btn-primary btn-sm w-full mt-1"
-                    onClick={() => handleUpload(movie)}
-                    disabled={uploadingId === movie.id || !file}
-                  >
-                    {uploadingId === movie.id ? (
-                      <>
-                        <span className="loading loading-spinner loading-xs mr-2" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-upload mr-2" />
-                        Upload Poster
-                      </>
-                    )}
-                  </button>
+                    <button
+                      className="btn btn-primary btn-xs w-full"
+                      type="button"
+                      onClick={() => handleOpenTmdbPosters(movie)}
+                      disabled={tmdbLoadingId === movie.id || !tmdbApiKey || !movie.tmdbId}
+                    >
+                      {tmdbLoadingId === movie.id ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs mr-1" />
+                          TMDb...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-photo-video mr-1" />
+                          TMDb posters
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      className="btn btn-outline btn-xs w-full"
+                      type="button"
+                      onClick={() => handleTriggerFileInput(movie.id)}
+                    >
+                      <i className="fas fa-file-image mr-1" />
+                      Choose file
+                    </button>
+
+                    <button
+                      className="btn btn-primary btn-xs w-full"
+                      type="button"
+                      onClick={() => handleUpload(movie)}
+                      disabled={uploadingId === movie.id || !file}
+                    >
+                      {uploadingId === movie.id ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs mr-1" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-upload mr-1" />
+                          Upload
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+      {tmdbPickingId && tmdbPosters.length > 0 && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-5xl bg-xmas-card">
+            <h3 className="font-bold text-lg mb-2">Choose a TMDb poster</h3>
+            <p className="text-xs opacity-80 mb-4">
+              These posters come from The Movie Database for this movie&apos;s stored tmdbId.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[60vh] overflow-y-auto">
+              {tmdbPosters.map((p) => (
+                <button
+                  key={p.url}
+                  type="button"
+                  className="border border-transparent hover:border-xmas-gold rounded-lg overflow-hidden bg-gray-900 focus:outline-none focus:ring-2 focus:ring-xmas-gold"
+                  onClick={() => handleSelectTmdbPoster(p)}
+                >
+                  <img
+                    src={p.url}
+                    alt="TMDb poster option"
+                    className="w-full h-auto object-cover"
+                    style={{ aspectRatio: '2/3' }}
+                  />
+                </button>
+              ))}
+            </div>
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => {
+                  setTmdbPickingId(null);
+                  setTmdbPosters([]);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </dialog>
       )}
     </div>
   );

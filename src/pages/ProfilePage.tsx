@@ -14,10 +14,12 @@ const ProfilePage: React.FC = () => {
   const { currentUser, userProfile, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const [showTmdbKey, setShowTmdbKey] = useState(false);
+  const [showOmdbKey, setShowOmdbKey] = useState(false);
   
   const [omdbApiKey, setOmdbApiKey] = useState('');
   const [fanartApiKey, setFanartApiKey] = useState('');
   const [showFanartKey, setShowFanartKey] = useState(false);
+  const [tmdbApiKey, setTmdbApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [migrationLoading, setMigrationLoading] = useState(false);
@@ -37,6 +39,9 @@ const ProfilePage: React.FC = () => {
     }
     if (userProfile?.fanartApiKey) {
       setFanartApiKey(userProfile.fanartApiKey);
+    }
+    if (userProfile?.tmdbApiKey) {
+      setTmdbApiKey(userProfile.tmdbApiKey);
     }
     
     const fetchUserStats = async () => {
@@ -69,10 +74,33 @@ const ProfilePage: React.FC = () => {
         console.error('Error fetching user stats:', err);
       }
     };
-    
+
     fetchUserStats();
   }, [currentUser, userProfile]);
-  
+
+  const handleSaveTmdbApiKey = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, { tmdbApiKey: tmdbApiKey || null });
+      
+      setSuccess('TMDb API key saved successfully!');
+      
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+    } catch (err: any) {
+      console.error('Error saving TMDb API key:', err);
+      setError(err.message || 'Failed to save TMDb API key');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveApiKey = async () => {
     if (!currentUser) return;
     
@@ -349,15 +377,59 @@ const ProfilePage: React.FC = () => {
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2 items-stretch">
                       <input
-                        type={showTmdbKey ? "text" : "password"}
+                        type={showOmdbKey ? "text" : "password"}
                         className="input input-bordered flex-1 h-12 text-lg"
                         value={omdbApiKey}
                         onChange={(e) => setOmdbApiKey(e.target.value)}
                         placeholder="Enter your OMDb API key"
-                        style={{ letterSpacing: showTmdbKey ? "normal" : "3px" }} // makes masking nicer
+                        style={{ letterSpacing: showOmdbKey ? "normal" : "3px" }} // makes masking nicer
                       />
 
                       {/* Toggle visibility */}
+                      <button
+                        type="button"
+                        className="btn btn-ghost w-12"
+                        onClick={() => setShowOmdbKey((s) => !s)}
+                      >
+                        <i className={`fas ${showOmdbKey ? "fa-eye-slash" : "fa-eye"}`}></i>
+                      </button>
+
+                      {/* Save button */}
+                      <button
+                        className="btn btn-primary w-full sm:w-auto"
+                        onClick={handleSaveApiKey}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                          <i className="fas fa-save"></i>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold mb-2">TMDb API Key (Admin posters)</h3>
+                  <p className="mb-4">
+                    Used only in the admin poster manager to fetch official posters from The Movie Database using stored tmdbIds.
+                  </p>
+
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">API Key</span>
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+                      <input
+                        type={showTmdbKey ? "text" : "password"}
+                        className="input input-bordered flex-1 h-12 text-lg"
+                        value={tmdbApiKey}
+                        onChange={(e) => setTmdbApiKey(e.target.value)}
+                        placeholder="Enter your TMDb API key"
+                        style={{ letterSpacing: showTmdbKey ? "normal" : "3px" }}
+                      />
+
                       <button
                         type="button"
                         className="btn btn-ghost w-12"
@@ -366,10 +438,9 @@ const ProfilePage: React.FC = () => {
                         <i className={`fas ${showTmdbKey ? "fa-eye-slash" : "fa-eye"}`}></i>
                       </button>
 
-                      {/* Save button */}
                       <button
                         className="btn btn-primary w-full sm:w-auto"
-                        onClick={handleSaveApiKey}
+                        onClick={handleSaveTmdbApiKey}
                         disabled={loading}
                       >
                         {loading ? (
