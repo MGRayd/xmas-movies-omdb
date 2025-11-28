@@ -5,7 +5,7 @@ import { collection, addDoc, getDocs, query, where, doc, setDoc } from 'firebase
 import { db } from '../firebase';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useAuth } from '../contexts/AuthContext';
-import TmdbSearchPanel from '../components/imports/TmdbSearchPanel';
+import OmdbSearchPanel from '../components/imports/OmdbSearchPanel';
 import { OmdbMovie } from '../types/movie';
 import { getMovieDetailsOmdb, formatOmdbMovie } from '../services/omdbService';
 import ExcelCatalogueImportWizard from '../components/imports/ExcelCatalogueImportWizard';
@@ -217,7 +217,7 @@ const AdminImportPage: React.FC = () => {
               </div>
             )}
             <h2 className="font-christmas text-2xl mb-4 text-xmas-gold">Search OMDb</h2>
-            <TmdbSearchPanel omdbApiKey={omdbApiKey} onSelect={handleSelectSearchResult} />
+            <OmdbSearchPanel omdbApiKey={omdbApiKey} onSelect={handleSelectSearchResult} />
           </div>
 
           <div className="bg-xmas-card p-6 rounded-lg shadow-lg">
@@ -327,6 +327,7 @@ const AdminImportPage: React.FC = () => {
           {omdbApiKey && (
             <ExcelCatalogueImportWizard
               omdbApiKey={omdbApiKey}
+              tmdbApiKey={tmdbApiKey}
               onDone={() => {
                 setMessage({ type: 'success', text: 'Excel catalogue import completed.' });
               }}

@@ -1,4 +1,4 @@
-// src/components/imports/TmdbSearchPanel.tsx
+// src/components/imports/OmdbSearchPanel.tsx
 import React, { useState } from 'react';
 import { searchMoviesOmdb, getMovieDetailsOmdb } from '../../services/omdbService';
 import { OmdbMovie } from '../../types/movie';
@@ -9,7 +9,7 @@ type Props = {
   onSelect: (movie: OmdbMovie) => void;
 };
 
-const TmdbSearchPanel: React.FC<Props> = ({ omdbApiKey, onSelect }) => {
+const OmdbSearchPanel: React.FC<Props> = ({ omdbApiKey, onSelect }) => {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<OmdbMovie[]>([]);
@@ -75,4 +75,4 @@ const TmdbSearchPanel: React.FC<Props> = ({ omdbApiKey, onSelect }) => {
   );
 };
 
-export default TmdbSearchPanel;
+export default OmdbSearchPanel;

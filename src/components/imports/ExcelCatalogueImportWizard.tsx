@@ -4,6 +4,8 @@ import * as XLSX from 'xlsx';
 import { ExcelMovieImport, OmdbMovie } from '../../types/movie';
 import { calculateConfidence, posterSrc } from '../../utils/matching';
 import { searchMoviesOmdb, getMovieDetailsOmdb, formatOmdbMovie } from '../../services/omdbService';
+import { getMoviePostersFromTmdb, TmdbPoster } from '../../services/tmdbService';
+import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, query, where, doc, setDoc } from 'firebase/firestore';
 
@@ -14,14 +16,18 @@ type Match = {
   status: 'matched' | 'unmatched' | 'duplicate' | 'manual';
   movieId?: string;
   selected: boolean;
+  tmdbIdOverride?: number;
+  posterOverrideUrl?: string;
 };
 
 type Props = {
   omdbApiKey: string;
+  tmdbApiKey?: string;
   onDone?: () => void;
 };
 
-const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => {
+const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, tmdbApiKey, onDone }) => {
+  const { userProfile } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<ExcelMovieImport[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -33,7 +39,19 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
   const [manualIndex, setManualIndex] = useState<number | null>(null);
   const [manualResults, setManualResults] = useState<OmdbMovie[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [tmdbModalIndex, setTmdbModalIndex] = useState<number | null>(null);
+  const [tmdbPosters, setTmdbPosters] = useState<TmdbPoster[]>([]);
+  const [tmdbPosterLoading, setTmdbPosterLoading] = useState(false);
+  const [tmdbIdInput, setTmdbIdInput] = useState('');
   const selectedCount = matches.filter(m => m.selected && m.tmdbMatch).length;
+
+  const effectiveTmdbApiKey = tmdbApiKey || userProfile?.tmdbApiKey || '';
+
+  const parseTmdbId = (raw: ExcelMovieImport['tmdbId'] | string): number | null => {
+    if (raw == null || raw === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
 
   const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -64,7 +82,66 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
         .filter(m => m.title);
       setRows(movies);
     };
+
     reader.readAsBinaryString(f);
+  };
+
+  const openTmdbModal = (idx: number) => {
+    const m = matches[idx];
+    const existing = m.tmdbIdOverride ?? parseTmdbId(m.excelData.tmdbId ?? '');
+    setTmdbIdInput(existing != null ? String(existing) : '');
+    setTmdbPosters([]);
+    setTmdbModalIndex(idx);
+  };
+
+  const loadTmdbPosters = async () => {
+    if (tmdbModalIndex == null) return;
+    if (!effectiveTmdbApiKey) {
+      setError('TMDb API key is required. Set it on your Profile page.');
+      return;
+    }
+    const parsed = parseTmdbId(tmdbIdInput.trim());
+    if (parsed == null) {
+      setError('Enter a valid numeric TMDb ID before loading posters.');
+      return;
+    }
+
+    try {
+      setTmdbPosterLoading(true);
+      setError(null);
+      const posters = await getMoviePostersFromTmdb(parsed, effectiveTmdbApiKey);
+      if (!posters.length) {
+        setError('No posters returned from TMDb for this id.');
+        return;
+      }
+      setTmdbPosters(posters);
+      setMatches(prev => {
+        const copy = [...prev];
+        copy[tmdbModalIndex] = {
+          ...copy[tmdbModalIndex],
+          tmdbIdOverride: parsed,
+        };
+        return copy;
+      });
+    } catch (e: any) {
+      setError(e?.message || 'Failed to fetch TMDb posters.');
+    } finally {
+      setTmdbPosterLoading(false);
+    }
+  };
+
+  const chooseTmdbPoster = (poster: TmdbPoster) => {
+    if (tmdbModalIndex == null) return;
+    setMatches(prev => {
+      const copy = [...prev];
+      copy[tmdbModalIndex] = {
+        ...copy[tmdbModalIndex],
+        posterOverrideUrl: poster.url,
+      };
+      return copy;
+    });
+    setTmdbModalIndex(null);
+    setTmdbPosters([]);
   };
 
   const scan = async () => {
@@ -218,12 +295,15 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
         const qSnap = await getDocs(query(moviesRef, where('imdbId', '==', details.imdbID)));
 
         let parsedTmdbId: number | null = null;
-        const rawTmdb = m.excelData.tmdbId;
-        if (rawTmdb != null && rawTmdb !== '') {
-          const n = Number(rawTmdb);
-          parsedTmdbId = Number.isFinite(n) ? n : null;
+        if (m.tmdbIdOverride != null) {
+          parsedTmdbId = m.tmdbIdOverride;
+        } else {
+          parsedTmdbId = parseTmdbId(m.excelData.tmdbId ?? '');
         }
         const basePayload = { ...formatOmdbMovie(details), updatedAt: new Date() } as any;
+        if (m.posterOverrideUrl) {
+          basePayload.posterUrl = m.posterOverrideUrl;
+        }
         if (parsedTmdbId != null) {
           basePayload.tmdbId = parsedTmdbId;
         }
@@ -269,6 +349,81 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {tmdbModalIndex !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
+          <div className="bg-base-100 rounded-box shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden p-6">
+            <h3 className="font-bold text-lg mb-4">
+              TMDb poster for: {matches[tmdbModalIndex].excelData.title}
+            </h3>
+
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text">TMDb ID</span>
+              </label>
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                value={tmdbIdInput}
+                onChange={e => setTmdbIdInput(e.target.value)}
+                placeholder="e.g. 603692"
+              />
+              <label className="label">
+                <span className="label-text-alt">
+                  This id will be stored on the catalogue movie and used by the poster tools.
+                </span>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={loadTmdbPosters}
+                disabled={tmdbPosterLoading}
+              >
+                {tmdbPosterLoading ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs mr-2" />
+                    Loading TMDb posters…
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-photo-video mr-2" />
+                    Load TMDb posters
+                  </>
+                )}
+              </button>
+            </div>
+
+            {tmdbPosters.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto mb-4">
+                {tmdbPosters.map(p => (
+                  <button
+                    key={p.url}
+                    className="border border-transparent hover:border-primary rounded-lg overflow-hidden bg-base-200"
+                    type="button"
+                    onClick={() => chooseTmdbPoster(p)}
+                  >
+                    <img src={p.url} className="w-full h-auto object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end mt-4">
+              <button
+                className="btn"
+                onClick={() => {
+                  setTmdbModalIndex(null);
+                  setTmdbPosters([]);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -353,17 +508,6 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
                       ) : (
                         '-'
                       )}
-                    </td>
-                    <td>
-                      {m.status === 'matched' && (
-                        <div className="badge badge-success">New</div>
-                      )}
-                      {m.status === 'unmatched' && (
-                        <div className="badge badge-error">Unmatched</div>
-                      )}
-                      {m.status === 'duplicate' && (
-                        <div className="badge badge-warning">Existing</div>
-                      )}
                       {m.status === 'manual' && (
                         <div className="badge badge-info">Manual</div>
                       )}
@@ -374,6 +518,12 @@ const ExcelCatalogueImportWizard: React.FC<Props> = ({ omdbApiKey, onDone }) => 
                         onClick={() => manualSearch(idx)}
                       >
                         <i className="fas fa-search" />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline ml-2"
+                        onClick={() => openTmdbModal(idx)}
+                      >
+                        <i className="fas fa-photo-video" />
                       </button>
                     </td>
                   </tr>

@@ -6,7 +6,7 @@ import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useAuth } from '../contexts/AuthContext';
 import { updateMoviesWithSortTitles } from '../utils/migrationUtils';
 import ExcelCatalogueImportWizard from '../components/imports/ExcelCatalogueImportWizard';
-import TmdbSearchPanel from '../components/imports/TmdbSearchPanel';
+import OmdbSearchPanel from '../components/imports/OmdbSearchPanel';
 import { OmdbMovie } from '../types/movie';
 import { getMovieDetailsOmdb, formatOmdbMovie } from '../services/omdbService';
 import { getMoviePostersFromTmdb, TmdbPoster } from '../services/tmdbService';
@@ -518,7 +518,7 @@ const AdminDashboardPage: React.FC = () => {
                     </div>
                   )}
                   <h3 className="font-christmas text-xl mb-4 text-xmas-gold">Search OMDb</h3>
-                  <TmdbSearchPanel
+                  <OmdbSearchPanel
                     key={searchPanelKey}
                     omdbApiKey={omdbApiKey}
                     onSelect={handleSelectSearchResult}
