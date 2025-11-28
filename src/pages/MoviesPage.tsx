@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
+import { getTmdbSizedImage } from '../services/tmdbService';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../ui/ToastProvider';
 import { getYearFromReleaseDate } from '../utils/dateUtils';
@@ -482,6 +483,16 @@ useEffect(() => {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
           {currentMovies.map((movie) => {
             const userMovie = userMovies[movie.id];
+
+            const overrideUrl = userMovie?.posterUrlOverride || null;
+            const isFanartOverride = overrideUrl?.includes('fanart.tv');
+
+            // For the grid, avoid heavy fanart.tv images and fall back to the catalogue poster
+            const posterSrc = isFanartOverride
+              ? movie.posterUrl
+              : overrideUrl || movie.posterUrl;
+
+            const gridPosterSrc = getTmdbSizedImage(posterSrc || '', 'w185');
             return (
               <Link 
                 key={movie.id}
@@ -492,9 +503,9 @@ useEffect(() => {
                 <div className="relative rounded-lg overflow-hidden bg-xmas-card shadow-md h-full flex flex-col">
                   {/* Poster */}
                   <div className="relative">
-                    {userMovie?.posterUrlOverride || movie.posterUrl ? (
+                    {posterSrc ? (
                       <img 
-                        src={userMovie?.posterUrlOverride || movie.posterUrl} 
+                        src={gridPosterSrc} 
                         alt={movie.title} 
                         className="w-full h-auto object-cover"
                         style={{ aspectRatio: '2/3' }}

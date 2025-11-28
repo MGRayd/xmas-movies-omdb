@@ -12,6 +12,21 @@ export interface TmdbPoster {
   voteCount: number;
 }
 
+export function getTmdbSizedImage(url: string, size: string): string {
+  if (!url) return url;
+  const tmdbHost = 'https://image.tmdb.org/t/p/';
+  if (!url.startsWith(tmdbHost)) return url;
+
+  const rest = url.substring(tmdbHost.length);
+  const firstSlashIndex = rest.indexOf('/');
+  if (firstSlashIndex === -1) return url;
+
+  const currentSize = rest.substring(0, firstSlashIndex);
+  if (currentSize === size) return url;
+
+  return tmdbHost + size + rest.substring(firstSlashIndex);
+}
+
 export const getMoviePostersFromTmdb = async (
   tmdbId: number,
   apiKey: string

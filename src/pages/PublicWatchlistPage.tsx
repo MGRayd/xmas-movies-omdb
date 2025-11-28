@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { Movie, UserMovie } from '../types/movie';
 import { getUserMoviesWithDetails } from '../utils/userMovieUtils';
 import { getYearFromReleaseDate } from '../utils/dateUtils';
+import { getTmdbSizedImage } from '../services/tmdbService';
 
 interface PublicStats {
   totalWatched: number;
@@ -189,6 +190,8 @@ const PublicWatchlistPage: React.FC = () => {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
           {movies.map((movie) => {
             const userMovie = userMovies[movie.id];
+            const posterSrc = movie.posterUrl;
+            const gridPosterSrc = getTmdbSizedImage(posterSrc || '', 'w185');
             return (
               <Link
                 key={movie.id}
@@ -197,9 +200,9 @@ const PublicWatchlistPage: React.FC = () => {
               >
                 <div className="relative rounded-lg overflow-hidden bg-xmas-card shadow-md h-full flex flex-col">
                   <div className="relative">
-                    {movie.posterUrl ? (
+                    {posterSrc ? (
                       <img
-                        src={movie.posterUrl}
+                        src={gridPosterSrc}
                         alt={movie.title}
                         className="w-full h-auto object-cover"
                         style={{ aspectRatio: '2/3' }}
