@@ -257,16 +257,32 @@ const MovieDetailPage: React.FC = () => {
     try {
       const ref = doc(db, 'users', currentUser.uid, 'movies', movieId);
       const snap = await getDoc(ref);
-      const prev = snap.exists() ? !!snap.data().watched : false;
+      const prevData = snap.exists() ? (snap.data() as any) : null;
+      const prev = prevData ? !!prevData.watched : false;
+      let nextRewatchCount = prevData && typeof prevData.rewatchCount === 'number' ? prevData.rewatchCount : 0;
 
       if (snap.exists()) {
-        await updateDoc(ref, {
+        if (!prev && next) {
+          nextRewatchCount += 1;
+        }
+
+        const updatePayload: any = {
           watched: next,
           // optionally clear watchedDate when turning off
           ...(next ? {} : { watchedDate: null }),
           updatedAt: new Date(),
-        });
+        };
+
+        if (nextRewatchCount > 0) {
+          updatePayload.rewatchCount = nextRewatchCount;
+        }
+
+        await updateDoc(ref, updatePayload);
       } else {
+        if (next) {
+          nextRewatchCount += 1;
+        }
+
         await setDoc(ref, {
           userId: currentUser.uid,
           movieId,

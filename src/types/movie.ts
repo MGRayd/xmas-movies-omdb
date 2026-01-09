@@ -30,6 +30,8 @@ export interface UserMovie {
   movieId: string;
   watched: boolean;
   watchedDate?: Date;
+  lastWatchedDate?: Date;
+  rewatchCount?: number;
   rating?: number; // 1-10
   review?: string;
   favorite: boolean;

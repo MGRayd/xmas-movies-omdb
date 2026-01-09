@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { Movie, UserMovie } from '../types/movie';
-import { getUserMovies, getUserMoviesWithDetails } from '../utils/userMovieUtils';
+import { getUserMovies, getUserMoviesWithDetails, resetUserWatchedStatus, resetUserAchievements } from '../utils/userMovieUtils';
 import { exportUserMoviesToCSV } from '../utils/exportUtils';
 import { updateMoviesWithSortTitles } from '../utils/migrationUtils';
 import MyRequests from '../components/MyRequests';
@@ -22,9 +22,12 @@ const ProfilePage: React.FC = () => {
   const [tmdbApiKey, setTmdbApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [migrationLoading, setMigrationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [resetAlsoAchievements, setResetAlsoAchievements] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [stats, setStats] = useState({
     totalMovies: 0,
     watchedMovies: 0,
@@ -74,9 +77,61 @@ const ProfilePage: React.FC = () => {
         console.error('Error fetching user stats:', err);
       }
     };
-
     fetchUserStats();
   }, [currentUser, userProfile]);
+
+  const handleOpenResetConfirm = () => {
+    setShowResetConfirm(true);
+  };
+
+  const handleResetForNewYear = async () => {
+    if (!currentUser) return;
+
+    try {
+      setResetLoading(true);
+      setError(null);
+      setShowResetConfirm(false);
+
+      await resetUserWatchedStatus(currentUser.uid);
+
+      if (resetAlsoAchievements) {
+        await resetUserAchievements(currentUser.uid);
+      }
+
+      // Refresh stats after reset
+      const userMovies = await getUserMovies(currentUser.uid);
+      const totalMovies = userMovies.length;
+      const watchedMovies = userMovies.filter(movie => movie.watched).length;
+      const unwatchedMovies = totalMovies - watchedMovies;
+      const favoriteMovies = userMovies.filter(movie => movie.favorite).length;
+      const ratedMovies = userMovies.filter(movie => movie.rating !== undefined && movie.rating !== null);
+      const averageRating = ratedMovies.length > 0
+        ? ratedMovies.reduce((sum, movie) => sum + (movie.rating || 0), 0) / ratedMovies.length
+        : 0;
+
+      setStats({
+        totalMovies,
+        watchedMovies,
+        unwatchedMovies,
+        averageRating,
+        favoriteMovies
+      });
+
+      setSuccess(resetAlsoAchievements
+        ? 'Your watch status and achievements have been reset for a fresh start!'
+        : 'Your watch status has been reset so you can start a new year fresh!'
+      );
+
+      setTimeout(() => {
+        setSuccess(null);
+      }, 4000);
+    } catch (err: any) {
+      console.error('Error resetting user data:', err);
+      setError(err.message || 'Failed to reset your watch status');
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleSaveTmdbApiKey = async () => {
     if (!currentUser) return;
@@ -234,6 +289,40 @@ const ProfilePage: React.FC = () => {
           <span>{success}</span>
         </div>
       )}
+
+      {showResetConfirm && (
+        <div className="modal modal-open">
+          <div className="modal-box bg-xmas-card border border-xmas-gold/40">
+            <h3 className="font-bold text-lg text-xmas-gold mb-2">Start New Year Fresh?</h3>
+            <p className="text-sm mb-4">
+              {resetAlsoAchievements
+                ? 'This will mark all your movies as unwatched and reset all of your achievements so you can start again. Ratings, reviews and favourites will be kept.'
+                : 'This will mark all your movies as unwatched so you can start a new year fresh. Ratings, reviews and favourites will be kept.'}
+            </p>
+            <div className="modal-action flex justify-end gap-2">
+              <button
+                className="btn btn-ghost"
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                disabled={resetLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error"
+                type="button"
+                onClick={handleResetForNewYear}
+                disabled={resetLoading}
+              >
+                {resetLoading && (
+                  <span className="loading loading-spinner loading-sm mr-2"></span>
+                )}
+                Yes, reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* User Profile */}
@@ -297,6 +386,33 @@ const ProfilePage: React.FC = () => {
                 )}
                 Export Movie Data
               </button>
+
+              <div className="flex flex-col gap-2">
+                <div className="form-control">
+                  <label className="cursor-pointer flex items-center justify-between gap-3 text-sm">
+                    <span className="label-text">Reset achievements</span>
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-warning"
+                      checked={resetAlsoAchievements}
+                      onChange={(e) => setResetAlsoAchievements(e.target.checked)}
+                    />
+                  </label>
+                </div>
+
+                <button
+                  className="btn btn-outline btn-error w-full"
+                  onClick={handleOpenResetConfirm}
+                  disabled={resetLoading || stats.totalMovies === 0}
+                >
+                  {resetLoading ? (
+                    <span className="loading loading-spinner loading-sm mr-2"></span>
+                  ) : (
+                    <i className="fas fa-redo mr-2"></i>
+                  )}
+                  Start New Year Fresh
+                </button>
+              </div>
               
               <button 
                 className="btn btn-outline btn-error w-full"

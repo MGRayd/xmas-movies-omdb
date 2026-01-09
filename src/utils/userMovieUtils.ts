@@ -17,11 +17,51 @@ export const saveUserMovie = async (
   const userMovieDoc = await getDoc(userMovieRef);
   
   if (userMovieDoc.exists()) {
+    const existing = userMovieDoc.data() as any;
+
     // Update existing record
-    const updatedData = {
+    const updatedData: any = {
       ...movieData,
       updatedAt: new Date()
     };
+
+    // Maintain a rewatch counter so achievements like "Comfort Rewatch"
+    // can detect multiple watches of the same movie.
+    let nextRewatchCount = typeof existing.rewatchCount === 'number' ? existing.rewatchCount : 0;
+
+    const incomingWatched = movieData.watched ?? existing.watched;
+    const prevWatched = !!existing.watched;
+
+    // Helper to normalise dates to YYYY-MM-DD for comparison
+    const toDateKey = (value: any): string | null => {
+      if (!value) return null;
+      if (value instanceof Date) return value.toISOString().split('T')[0];
+      if (typeof value.toDate === 'function') {
+        const d = value.toDate();
+        return d instanceof Date && !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
+      }
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+    };
+
+    const prevDateKey = toDateKey(existing.watchedDate);
+    const incomingDate = movieData.watchedDate ?? existing.watchedDate;
+    const nextDateKey = toDateKey(incomingDate);
+
+    // Count a new watch when:
+    // - transitioning from not-watched to watched, or
+    // - still watched but the stored watched date changes to a new day.
+    if (incomingWatched) {
+      if (!prevWatched) {
+        nextRewatchCount += 1;
+      } else if (prevDateKey && nextDateKey && prevDateKey !== nextDateKey) {
+        nextRewatchCount += 1;
+      }
+    }
+
+    if (nextRewatchCount > 0) {
+      updatedData.rewatchCount = nextRewatchCount;
+    }
     
     // Handle explicit null values for fields that should be removed
     // This ensures fields like rating are properly cleared when set to null
@@ -181,4 +221,65 @@ export const getUserMoviesWithDetails = async (userId: string): Promise<{
   setMovieCache(userId, userMoviesMap, moviesData);
   
   return result;
+};
+
+// Reset all watched flags for a user's movies while preserving ratings, reviews, and favourites
+export const resetUserWatchedStatus = async (userId: string): Promise<void> => {
+  const userMoviesRef = collection(db, `users/${userId}/movies`);
+  const snapshot = await getDocs(userMoviesRef);
+
+  const batchSize = 20;
+  let batchOps: Promise<any>[] = [];
+
+  snapshot.forEach((d) => {
+    const ref = doc(db, `users/${userId}/movies`, d.id);
+    const data = d.data() as any;
+
+    // Preserve the previous watched date so that achievements like
+    // "Tradition Keeper" can detect watches across different years
+    const previousWatchedDate = data.watchedDate || data.lastWatchedDate || null;
+
+    const updatePayload: any = {
+      watched: false,
+      watchedDate: null,
+    };
+
+    if (previousWatchedDate) {
+      updatePayload.lastWatchedDate = previousWatchedDate;
+    }
+
+    batchOps.push(updateDoc(ref, updatePayload));
+  });
+
+  if (batchOps.length >= batchSize) {
+    // flush current batch before starting a new one
+    // eslint-disable-next-line no-floating-promises
+    batchOps = [Promise.all(batchOps)];
+  }
+
+  if (batchOps.length) {
+    await Promise.all(batchOps);
+  }
+
+  clearMovieCache();
+};
+
+// Clear all achievement documents for a user so they can be re-earned
+export const resetUserAchievements = async (userId: string): Promise<void> => {
+  const achievementsRef = collection(db, `users/${userId}/achievements`);
+  const snapshot = await getDocs(achievementsRef);
+
+  const deletes: Promise<any>[] = [];
+  snapshot.forEach((d) => {
+    deletes.push(deleteDoc(doc(db, `users/${userId}/achievements`, d.id)));
+  });
+
+  if (deletes.length) {
+    await Promise.all(deletes);
+  }
+
+  // Record an achievements reset timestamp on the main user doc so that old
+  // activity doesn't immediately re-unlock badges when stats are recalculated.
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, { achievementsResetAfter: new Date() });
 };

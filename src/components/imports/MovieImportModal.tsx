@@ -1,5 +1,6 @@
 import React from 'react';
 import { posterSrc } from '../../utils/matching';
+import { getYearFromReleaseDate } from '../../utils/dateUtils';
 
 interface MovieImportModalProps {
   selected: any;
@@ -41,7 +42,12 @@ const MovieImportModal: React.FC<MovieImportModalProps> = ({
           <div className="flex-1">
             <h2 className="text-xl font-bold mb-1">{selected.title}</h2>
             <p className="text-sm opacity-80 mb-1">
-              {selected.release_date?.slice(0, 4)}
+              {getYearFromReleaseDate(
+                selected.release_date ||
+                  selected.releaseDate ||
+                  selected.Year ||
+                  selected.Released
+              )}
             </p>
             {!showDetails && selected.runtime && (
               <p className="text-sm opacity-80 mb-1">

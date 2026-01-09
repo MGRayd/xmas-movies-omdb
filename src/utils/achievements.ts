@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Movie, UserMovie } from '../types/movie';
 
@@ -17,15 +17,24 @@ export interface UserStats {
   averageRating: number;
   lowRatingAny: boolean;
   highRatingAny: boolean;
+  lowRatingCount: number;
+  highRatingCount: number;
   classicWatched: number;
   romanceCount: number;
   animatedCount: number;
   favoriteCount: number;
+  genreVariety: number;
+  decadeVariety: number;
+  maxRewatchCount: number;
+  maxWatchedInDay: number;
   usageDistinctDays: number;
   decemberDistinctDays: number;
   hasChristmasEveWatch: boolean;
   hasNewYearsWatch: boolean;
   hasTwelveDayStreak: boolean;
+  hasWeekendDouble: boolean;
+  hasPreDecemberWatch: boolean;
+  hasYearlyRewatch: boolean;
 }
 
 export const ACHIEVEMENTS: AchievementDefinition[] = [
@@ -54,6 +63,14 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     check: (s) => s.totalWatched >= 20,
   },
   {
+    id: 'polar_explorer',
+    name: 'Polar Explorer',
+    description: 'You have ventured deep into festive territory.',
+    hint: 'Watch 35 movies.',
+    icon: '🧭',
+    check: (s) => s.totalWatched >= 35,
+  },
+  {
     id: 'christmas_marathoner',
     name: 'Christmas Marathoner',
     description: 'You turned Christmas movies into a marathon event.',
@@ -62,12 +79,28 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     check: (s) => s.totalWatched >= 50,
   },
   {
+    id: 'north_pole_resident',
+    name: 'North Pole Resident',
+    description: 'Christmas movies are basically your habitat now.',
+    hint: 'Watch 75 movies.',
+    icon: '🏔️',
+    check: (s) => s.totalWatched >= 75,
+  },
+  {
     id: 'twelve_days',
     name: '12 Days of Christmas',
     description: 'You kept the festive streak going for 12 days.',
     hint: 'Watch a movie daily for 12 days.',
     icon: '🎄',
     check: (s) => s.hasTwelveDayStreak,
+  },
+  {
+    id: 'comfort_rewatch',
+    name: 'Comfort Rewatch',
+    description: 'Some Christmas movies never get old.',
+    hint: 'Rewatch the same movie 3 times.',
+    icon: '🔁',
+    check: (s) => s.maxRewatchCount >= 3,
   },
   {
     id: 'the_grinch',
@@ -84,6 +117,22 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     hint: 'Give a movie a perfect 10★.',
     icon: '🎅',
     check: (s) => s.highRatingAny,
+  },
+  {
+    id: 'holiday_optimist',
+    name: 'Holiday Optimist',
+    description: 'You see the best in festive films.',
+    hint: 'Give 10 movies a rating of 8★ or higher.',
+    icon: '🌟',
+    check: (s) => s.highRatingCount >= 10,
+  },
+  {
+    id: 'coal_giver',
+    name: 'Coal Giver',
+    description: 'Some movies really missed the mark.',
+    hint: 'Give 5 movies 2★ or lower.',
+    icon: '🪨',
+    check: (s) => s.lowRatingCount >= 5,
   },
   {
     id: 'the_critic',
@@ -110,6 +159,22 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     check: (s) => s.classicWatched >= 5,
   },
   {
+    id: 'genre_juggler',
+    name: 'Genre Juggler',
+    description: 'You sampled a bit of everything festive.',
+    hint: 'Watch movies from 5 different genres.',
+    icon: '🎭',
+    check: (s) => s.genreVariety >= 5,
+  },
+  {
+    id: 'decades_of_cheer',
+    name: 'Decades of Cheer',
+    description: 'You watched Christmas through the ages.',
+    hint: 'Watch movies from 4 different decades.',
+    icon: '📆',
+    check: (s) => s.decadeVariety >= 4,
+  },
+  {
     id: 'animated_joy',
     name: 'Animated Joy',
     description: 'You love animated festive adventures.',
@@ -134,12 +199,52 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     check: (s) => s.favoriteCount >= 10,
   },
   {
+    id: 'tree_full_of_lights',
+    name: 'Tree Full of Lights',
+    description: 'Your favourites list is glowing.',
+    hint: 'Mark 20 movies as favourite.',
+    icon: '✨',
+    check: (s) => s.favoriteCount >= 20,
+  },
+  {
+    id: 'background_cheer',
+    name: 'Background Cheer',
+    description: 'It’s on… even if you’re not really watching.',
+    hint: 'Log 3 movies in one day.',
+    icon: '📼',
+    check: (s) => s.maxWatchedInDay >= 3,
+  },
+  {
     id: 'elf_mode',
     name: 'Elf Mode',
     description: 'You keep coming back like a dedicated Christmas elf.',
     hint: 'Use the app on 10 different days.',
     icon: '🧝‍♂️',
     check: (s) => s.usageDistinctDays >= 10,
+  },
+  {
+    id: 'festive_weekender',
+    name: 'Festive Weekender',
+    description: 'A perfect weekend activity.',
+    hint: 'Watch movies on both Saturday and Sunday.',
+    icon: '📺',
+    check: (s) => s.hasWeekendDouble,
+  },
+  {
+    id: 'early_bird',
+    name: 'Early Bird',
+    description: 'You started Christmas early.',
+    hint: 'Watch a Christmas movie before December.',
+    icon: '🐦',
+    check: (s) => s.hasPreDecemberWatch,
+  },
+  {
+    id: 'tradition_keeper',
+    name: 'Tradition Keeper',
+    description: 'A ritual worth repeating.',
+    hint: 'Watch the same movie in different years.',
+    icon: '🕰️',
+    check: (s) => s.hasYearlyRewatch,
   },
   {
     id: 'christmas_eve_watcher',
@@ -189,6 +294,14 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
   let favoriteCount = 0;
   let lowRatingAny = false;
   let highRatingAny = false;
+  let lowRatingCount = 0;
+  let highRatingCount = 0;
+  const genreSet = new Set<string>();
+  const decadeSet = new Set<number>();
+  let maxRewatchCount = 0;
+  const dayWatchCounts: Record<string, number> = {};
+  const watchYearsByMovie: Record<string, Set<number>> = {};
+  let maxWatchedInDay = 0;
   const decemberDays = new Set<string>();
   const usageDays = new Set<string>();
   const watchedDays = new Set<string>();
@@ -197,10 +310,22 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
     if (um.watched) {
       totalWatched++;
 
+      // Derive maxRewatchCount from per-movie rewatchCount, falling back to 1
+      const rc = (um as any).rewatchCount;
+      const effectiveCount = typeof rc === 'number' && rc > 0 ? rc : 1;
+      if (effectiveCount > maxRewatchCount) {
+        maxRewatchCount = effectiveCount;
+      }
+
       const watchedDate = toDateLike((um as any).watchedDate);
       if (watchedDate) {
         const key = watchedDate.toISOString().split('T')[0];
         watchedDays.add(key);
+        const dayCount = (dayWatchCounts[key] ?? 0) + 1;
+        dayWatchCounts[key] = dayCount;
+        if (dayCount > maxWatchedInDay) {
+          maxWatchedInDay = dayCount;
+        }
         const month = watchedDate.getMonth();
         const day = watchedDate.getDate();
         if (month === 11) {
@@ -230,12 +355,41 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
         if (year !== null && year < 2000) {
           classicWatched++;
         }
+
+        if (year !== null) {
+          const decade = Math.floor(year / 10) * 10;
+          decadeSet.add(decade);
+        }
       }
-      if (movie && movie.genres && movie.genres.includes('Romance')) {
-        romanceCount++;
+      if (movie && movie.genres) {
+        for (const g of movie.genres) {
+          genreSet.add(g);
+        }
+        if (movie.genres.includes('Romance')) {
+          romanceCount++;
+        }
+        if (movie.genres.includes('Animation')) {
+          animatedCount++;
+        }
       }
-      if (movie && movie.genres && movie.genres.includes('Animation')) {
-        animatedCount++;
+
+      if (um.movieId) {
+        const yearsForThisMovie = new Set<number>();
+        if (watchedDate) {
+          yearsForThisMovie.add(watchedDate.getUTCFullYear());
+        }
+        const lastWatchedDate = toDateLike((um as any).lastWatchedDate);
+        if (lastWatchedDate) {
+          yearsForThisMovie.add(lastWatchedDate.getUTCFullYear());
+        }
+        if (yearsForThisMovie.size > 0) {
+          if (!watchYearsByMovie[um.movieId]) {
+            watchYearsByMovie[um.movieId] = new Set<number>();
+          }
+          for (const y of yearsForThisMovie) {
+            watchYearsByMovie[um.movieId].add(y);
+          }
+        }
       }
     }
 
@@ -251,6 +405,12 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
       }
       if (um.rating >= 10) {
         highRatingAny = true;
+      }
+      if (um.rating <= 2) {
+        lowRatingCount++;
+      }
+      if (um.rating >= 8) {
+        highRatingCount++;
       }
     }
 
@@ -285,15 +445,56 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
 
   let hasChristmasEveWatch = false;
   let hasNewYearsWatch = false;
+  let hasWeekendDouble = false;
+  let hasPreDecemberWatch = false;
+  let hasYearlyRewatch = false;
   for (const d of watchedDays) {
     const date = new Date(d + 'T00:00:00Z');
-    const month = date.getMonth();
-    const day = date.getDate();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    const weekday = date.getUTCDay();
     if (month === 11 && day === 24) {
       hasChristmasEveWatch = true;
     }
     if (month === 0 && day === 1) {
       hasNewYearsWatch = true;
+    }
+
+    if (month < 11) {
+      hasPreDecemberWatch = true;
+    }
+
+    if (!hasWeekendDouble) {
+      if (weekday === 6) {
+        // Saturday: check next day for Sunday in watchedDays
+        const next = new Date(date.getTime());
+        next.setUTCDate(next.getUTCDate() + 1);
+        const keyNext = next.toISOString().split('T')[0];
+        if (watchedDays.has(keyNext)) {
+          const nextWeekday = next.getUTCDay();
+          if (nextWeekday === 0) {
+            hasWeekendDouble = true;
+          }
+        }
+      } else if (weekday === 0) {
+        // Sunday: check previous day for Saturday in watchedDays
+        const prev = new Date(date.getTime());
+        prev.setUTCDate(prev.getUTCDate() - 1);
+        const keyPrev = prev.toISOString().split('T')[0];
+        if (watchedDays.has(keyPrev)) {
+          const prevWeekday = prev.getUTCDay();
+          if (prevWeekday === 6) {
+            hasWeekendDouble = true;
+          }
+        }
+      }
+    }
+  }
+
+  for (const movieId of Object.keys(watchYearsByMovie)) {
+    if (watchYearsByMovie[movieId].size >= 2) {
+      hasYearlyRewatch = true;
+      break;
     }
   }
 
@@ -305,26 +506,35 @@ function buildStats(userMovies: UserMovie[], moviesById: Record<string, Movie>):
     averageRating,
     lowRatingAny,
     highRatingAny,
+    lowRatingCount,
+    highRatingCount,
     classicWatched,
     romanceCount,
     animatedCount,
     favoriteCount,
+    genreVariety: genreSet.size,
+    decadeVariety: decadeSet.size,
+    maxRewatchCount,
+    maxWatchedInDay,
     usageDistinctDays: usageDays.size,
     decemberDistinctDays: decemberDays.size,
     hasChristmasEveWatch,
     hasNewYearsWatch,
     hasTwelveDayStreak,
+    hasWeekendDouble,
+    hasPreDecemberWatch,
+    hasYearlyRewatch,
   };
 }
 
 export async function checkAndUnlockAchievements(userId: string): Promise<string[]> {
   const userMoviesSnap = await getDocs(collection(db, `users/${userId}/movies`));
-  const userMovies: UserMovie[] = [];
+  const userMoviesRaw: UserMovie[] = [];
   const movieIds = new Set<string>();
 
   userMoviesSnap.forEach((d) => {
     const data = d.data() as any;
-    userMovies.push({ id: d.id, ...data } as UserMovie);
+    userMoviesRaw.push({ id: d.id, ...data } as UserMovie);
     if (data.movieId) {
       movieIds.add(data.movieId);
     }
@@ -341,6 +551,30 @@ export async function checkAndUnlockAchievements(userId: string): Promise<string
       });
       break;
     }
+  }
+
+  // Check if the user has recently reset achievements; if so, ignore
+  // activity prior to that reset when computing stats so that badges
+  // do not immediately re-unlock from historical data.
+  let resetAfter: Date | null = null;
+  try {
+    const userSnap = await getDoc(doc(db, 'users', userId));
+    if (userSnap.exists()) {
+      const data = userSnap.data() as any;
+      if (data.achievementsResetAfter) {
+        resetAfter = toDateLike(data.achievementsResetAfter);
+      }
+    }
+  } catch (e) {
+    console.error('Error loading achievements reset meta', e);
+  }
+
+  let userMovies = userMoviesRaw;
+  if (resetAfter) {
+    userMovies = userMoviesRaw.filter((um) => {
+      const activityDate = toDateLike((um as any).updatedAt || (um as any).addedAt || (um as any).watchedDate);
+      return !activityDate || activityDate > resetAfter!;
+    });
   }
 
   const stats = buildStats(userMovies, moviesById);
